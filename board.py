@@ -1,5 +1,5 @@
 
-class board:
+class Board:
     WILDCARD = ' ' #this are the two blank Scrabble tiles
     HORIZONTAL = 1
     VERTICAL = -1 #lose the benefit of boolean logic, but then you can multiply by -1 to flip

@@ -1,23 +1,24 @@
 
+import gaddag 
+import corpus
+#global gaddag so that this only loads once to server all requests 
+#REFACTOR check if memory loaded multiple times 
+SCRABBLE_GADDAG = gaddag.read_gaddag_full()
+SCRABBLE_MIN_WORD_LENGTH = corpus.get_min_word_length() 
+SCRABBLE_CORPUS  = corpus.load_scrabble_corpus()
 
 class GameController:
-    #global gaddag so that this only loads once to server all requests 
-    #REFACTOR check if memory loaded multiple times 
-    SCRABBLE_APPRENTICE_GADDAG = scrabble_apprentice_gaddag.read_gaddag_full()
-
-    MIN_WORD_LENGTH = 2
-    SCRABBLE_CORPUS  = load_scrabble_corpus()
-
-    #1: Loading scrabble score and frequency dictionaries, as well as bag and entire corpurs
-    #source lexicon: http://www.wordgamedictionary.com/twl06/download/twl06.txt -- the FreeScrabbleDictionary_twl06.txt, used for North American tournaments
-    def load_scrabble_corpus():
-        scrabble_corpus= []
-        with open(os.path.join(os.path.dirname( __file__ ), 'static', 'data', 'FreeScrabbleDictionary_twl06.txt'), newline = '') as raw_corpus:
-            for word in csv.reader(raw_corpus):
-                cleaned_word = ''.join(word).upper()
-                if len(cleaned_word) >= MIN_WORD_LENGTH: #this excludes 'A' and 'I'...for now...TBD
-                    scrabble_corpus.extend([cleaned_word])
-        return scrabble_corpus
+    def __init__(self):
+        self.board = board
+        self.current_player = scrabble_player_1
+        self.round_num = 1 
+        self.num_turns_passed = 0
+        self.play_order = []
+        #set the play order, and draw tiles for each player
+        for player in [scrabble_player_1, scrabble_player_2, scrabble_player_3, scrabble_player_4]:
+            if player:
+                self.play_order.append(player)
+                self.draw_tiles_end_of_turn(player, RACK_MAX_NUM_TILES)
     
     def get_game_info():
         round_num
@@ -30,19 +31,11 @@ class GameController:
                                    "wordsPlayedHuman": human_player.words_played, "wordsPlayedComputer": computer_player.words_played,
                                    "tilesLeft": len(scrabble_board.bag),
                                    "gameEndReason": scrabble_game_play.game_end_reason()}
-    def __init__(self):
-        self.board = board
-        self.current_player = scrabble_player_1
-        self.round_num = 1 
-        self.num_turns_passed = 0
-        self.play_order = []
-        #set the play order, and draw tiles for each player
-        for player in [scrabble_player_1, scrabble_player_2, scrabble_player_3, scrabble_player_4]:
-            if player:
-                self.play_order.append(player)
-                self.draw_tiles_end_of_turn(player, RACK_MAX_NUM_TILES)
-          
-        
+    
+    def attempt_move(self, player, tiles):  
+        move = Move()
+        move.attempt_human_move(player, tiles)
+        move.attempt_computer_move(player_computer)
                 
     def game_has_ended(self):
         return self.game_end_reason() != ""

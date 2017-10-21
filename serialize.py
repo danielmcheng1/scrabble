@@ -5,15 +5,12 @@ def wrapper_play_next_move(data):
     print("Received data in scrabble_apprentice: {0}".format(str(data)))
     #initialize board 
     if data.get("scrabble_game_play", {}) == {}:
-        print("initializing")
         (scrabble_score_dict, scrabble_freq_dict, scrabble_bag, scrabble_corpus) = load_all()
         scrabble_board = board(scrabble_bag, scrabble_score_dict, scrabble_corpus)
             
         human_player = scrabble_player("Human", IS_HUMAN, scrabble_board)  
         computer_player = scrabble_player("Computer", IS_COMPUTER, scrabble_board)  
         scrabble_game_play = game_play(scrabble_board, human_player, computer_player) 
-        #computer_player.rack = list("SCRABBL")
-        #human_player.rack = list("WINNERS")
         last_move_to_send = {"action": "Game Started", "player": "", "detail": ""}
         return wrapper_save_game_play(scrabble_game_play, last_move_to_send)
     
