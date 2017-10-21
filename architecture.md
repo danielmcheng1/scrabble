@@ -7,7 +7,7 @@ Wrapper
         need board, player racks, game info (incl. last move) 
     object to JSON (extra step to Javascript?) 
     JSON to object 
-    
+
 Game Play 
     start game 
     make_move of ENUM 
