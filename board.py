@@ -1,8 +1,6 @@
 
 class Board:
     WILDCARD = ' ' #this are the two blank Scrabble tiles
-    HORIZONTAL = 1
-    VERTICAL = -1 #lose the benefit of boolean logic, but then you can multiply by -1 to flip
     TRIPLE_LETTER = '3L'
     TRIPLE_WORD = '3W'
     DOUBLE_LETTER = '2L'
@@ -46,6 +44,7 @@ class Board:
             
             
     #exception for the first move
+    #REFACTOR can probably just be determined by hook spots
     def intersect_center_tile(self, start_row, start_col, direction, word):
         if direction == HORIZONTAL:
             if start_row != 7 or start_col > CENTER_COL or start_col + len(word) - 1 < CENTER_COL:
@@ -57,7 +56,11 @@ class Board:
             
     
     #TBD: false for beyond boudnaries seems dangerous
-    def is_scrabble_tile(self, row, col):
+    #REFACTOR pick one 
+    def has_tile(self, location):
+        return has_scrabble_tile(location.get_row(), location.get_col())
+        
+    def has_scrabble_tile(self, row, col):
         #went beyond bounds of board--useful when checking valid anchor squares and whether the ends are filled
         #we have to make this explicit or else board[-1] will wrap around!!
         if row < MIN_ROW or col < MIN_COL or row >= MAX_ROW or col >= MAX_COL:
@@ -66,3 +69,6 @@ class Board:
             return True
         else:
             return False
+    def get_tile(self, location):
+        return self.board[location.get_row(), location.get_col()]
+        

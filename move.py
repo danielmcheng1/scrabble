@@ -5,6 +5,9 @@ class Move:
     PLACE_TILES = "Place tiles"
     EXCHANGE_TILES = "Exchange tiles"
     PASS = "Pass"
+    HORIZONTAL = 1
+    VERTICAL = -1
+    
     def __init__(self, board, bag):
         self.comp_max_score = 0
         self.comp_max_word = []
@@ -27,11 +30,11 @@ class Move:
     def attempt_computer_move(self, player):
         
     def attempt_human_move(self, player, move_type, tiles):
-        tiles = self.sort_tiles(tiles)
+        sorted_tiles = self.sort_tiles(tiles)
         if move_type == PLACE_TILES:
-            self.attempt_place_tiles(tiles)
+            self.attempt_place_tiles(sorted_tiles)
         elif move_type == EXCHANGE_TILES:
-            self.attempt_exchange_tiles(tiles)
+            self.attempt_exchange_tiles(sorted_tiles)
         elif move_type == PASS:
             self.attempt_pass()
         
@@ -54,14 +57,14 @@ class Move:
             #exception for first move
             if self.num_words_placed == 0:
                 if not self.intersect_center_tile(start_row, start_col, direction, word):
-                    raise ValueError("The first move on the board must intersect the center tile")
+                    raise ValueError("The first move on the board must cross the center tile")
             #all other moves
             else:
                 hooks_onto_tile = False
                 for curr_row in range(start_row, end_row):
                     for curr_col in range(start_col, end_col):
                         to_place = word[curr_row - start_row + curr_col - start_col] #the extra blank padding only appears when printing
-                        if self.is_scrabble_tile(curr_row, curr_col):
+                        if self.has_scrabble_tile(curr_row, curr_col):
                             if self.board[curr_row][curr_col] != to_place:
                                 raise ValueError('Your tile {0} overlaps existing tiles on the board (perhaps from a concurrent session?)'.format(to_place))
                             else:
@@ -83,60 +86,80 @@ class Move:
         human_score = self.calc_word_score(start_row, start_col, direction, word, valid_crossword_score_dict)
         return human_score
         
-    def convert_placed_tiles_to_full_placement(self, placed_tiles):
-        (filled_rows, filled_cols) = self.find_filled_rows_and_cols(placed_tiles)
-        if len(filled_rows) == 0:
+    def find_used_rows_and_cols(self, tiles):
+        rows = set([])
+        cols = set([])
+        for tile in tiles:
+            rows.add(tile.location.get_row())
+            cols.add(tile.location.get_col())
+        return (rows, cols) 
+        
+    def has_tile_above_or_below(self, tile, board):
+        tile_row = tile.location.get_row()
+        tile_col = tile.location.get_col() 
+        return board.has_scrabble_tile(tile_row, tile_col - 1) or board.has_scrabble_tile(tile_row, tile_col + 1)
+    
+    def find_start_of_word(self, some_location, direction, board):
+        start_location = some_location 
+        while board.has_tile(location):
+            if direction == HORIZONTAL:
+                start_location = start_location.offset(-1, 0)
+            else 
+                start_location = start_location.offset(0, -1)
+        return start_location
+    
+    # REFACTOR errors? at least not value error....
+    # given list of tiles placed by player, calculate the full word formed (since this will include tiles already on the board)
+    def map_tiles_to_word_on_board(self, sorted_tiles, board):
+        # assert this is a valid tile placement 
+        num_tiles = len(sorted_tiles)
+        if num_tiles == 0:
             raise ValueError("You must place at least one tile. If you cannot move, exchange tiles or simply pass")
-        elif len(filled_rows) == 1:
-            direction = HORIZONTAL 
+        
+        (used_rows, used_cols) = self.find_used_rows_and_cols(sorted_tiles)
+        if len(filled_rows) == 1:
+            # exception: if only one tile is placed, check if the word formed is actually going vertically 
+            if len(sorted_tiles) == 0 and self.has_tile_above_or_below(sorted_tiles[0], board):
+                direction = VERTICAL 
+            else:
+                direction = HORIZONTAL 
         elif len(filled_cols) == 1: 
             direction = VERTICAL 
         else:
-            raise ValueError("You can only place in one row or column")        
-        #the leftmost / uppermost point of adjacency 
-        anchor_row = min(filled_rows)
-        anchor_col = min(filled_cols)        
-        
-        #similar to the pull_valid_crossword_score function...
-        prefix = self.find_word_from_anchor(placed_tiles, anchor_row, anchor_col, direction, 'PREFIX')
-        suffix = self.find_word_from_anchor(placed_tiles, anchor_row, anchor_col, direction, 'SUFFIX')
-        print("prefix: {0}, suffix: {1}, placed_tiles {2}, anchor_row {3}, anchor_col {4}".format(prefix, suffix, placed_tiles, anchor_row, anchor_col))
-        word = prefix + [placed_tiles[anchor_row][anchor_col]] + suffix
-        
-        #exception for one tile placements--the official direction is the direction that creates the longer word 
-        if len(word) == 1:
-            flipped_direction = direction * - 1
-            flipped_prefix = self.find_word_from_anchor(placed_tiles, anchor_row, anchor_col, flipped_direction, 'PREFIX')
-            flipped_suffix = self.find_word_from_anchor(placed_tiles, anchor_row, anchor_col, flipped_direction, 'SUFFIX')
-            flipped_word = flipped_prefix + [placed_tiles[anchor_row][anchor_col]] + flipped_suffix
-            if len(flipped_word) > 1:
-                word = flipped_word 
-                direction = flipped_direction 
-                prefix = flipped_prefix
-                suffix = flipped_suffix
-        #the actual start of the word -- since there would be existing tiles to the left / top of the anchor tile 
-        if direction == HORIZONTAL:
-            start_row = anchor_row 
-            start_col = anchor_col - len(prefix)
-        else:
-            start_row = anchor_row - len(prefix)
-            start_col = anchor_col 
+            raise ValueError("You can only place in one row or column")    
             
-        #check that there aren't extra tiles placed beyond the end of the word (since we walked down until finding an empty spot 
-        if (max(filled_rows) > start_row + len(word) - 1) or (max(filled_cols) > start_col + len(word) - 1):
-            raise ValueError("All tiles must be connected to each other") 
-            
-        return {"start_row": start_row, "start_col": start_col, "direction": direction, "word": word}
+        start_location = find_start_of_word(sorted_tiles[0].location, direction, board)
         
-    def find_filled_rows_and_cols(self, placed_tiles):
-        rows = set([])
-        cols = set([])
-        for row in range(MIN_ROW, MAX_ROW):
-            for col in range(MIN_COL, MAX_COL):
-                if placed_tiles[row][col] != "":
-                    rows.add(row)
-                    cols.add(col)
-        return (rows, cols) 
+        # pull the whole word from existing board tiles + tiles placed by player 
+        current_location = start_location
+        tile_index = 0 
+        word =  [] 
+        while True:
+            # existing board tile 
+            if board.has_tile(location):
+                word.append(board.get_tile(location).letter) # REFACTOR: get methods? 
+            
+            # we've used all the tiles placed by the player 
+            elif tile_index == num_tiles:
+                break  
+            
+            # player did not place anything here 
+            elif sorted_tiles[tile_index].location != location:
+                raise ValueError("All tiles must be connected to each other") 
+            
+            # player placed a tile here 
+            else:
+                word.append(sorted_tiles[tile_index].letter) 
+                tile_index += 1
+                
+            # move to the next spot 
+            if direction == HORIZONTAL:
+                current_location = current_location.offset(-1, 0)
+            else 
+                current_location = current_location.offset(0, -1)
+                
+        return {"start_location": start_location, "direction": direction, "word": word}
+        
     #given the starting placement--i.e. the anchor tile--determine the prefix and suffix (since the full word may include tiles on the board) 
     def find_word_from_anchor(self, placed_tiles, anchor_row, anchor_col, direction, prefix_or_suffix):
         if direction == HORIZONTAL:
@@ -152,7 +175,7 @@ class Move:
         while True:
             (curr_row, curr_col) = (curr_row + row_delta, curr_col + col_delta)
             if curr_row >= MIN_ROW and curr_row < MAX_ROW and curr_col >= MIN_COL and curr_col < MAX_COL:
-                if self.is_scrabble_tile(curr_row, curr_col):
+                if self.has_scrabble_tile(curr_row, curr_col):
                     letter = self.board[curr_row][curr_col]
                 else:
                     letter = placed_tiles[curr_row][curr_col]
@@ -230,7 +253,7 @@ class Move:
             return
         
         #if there is already a tile here, try to place this as the next move
-        if self.is_scrabble_tile(curr_row, curr_col):
+        if self.has_scrabble_tile(curr_row, curr_col):
             letter = self.board[curr_row][curr_col]
             if curr_node is None:
                 curr_node = SCRABBLE_APPRENTICE_GADDAG.start_node
@@ -288,7 +311,7 @@ class Move:
         for curr_row in range(start_row, end_row):
             for curr_col in range(start_col, end_col):
                 #if we aren't overlapping an existing tile, then increment the tile count
-                if not self.is_scrabble_tile(curr_row, curr_col):
+                if not self.has_scrabble_tile(curr_row, curr_col):
                     num_tiles_used = num_tiles_used + 1
                 
                 #calculate score and bonus for this letter
@@ -373,13 +396,13 @@ class Move:
         #saved_tile = self.board[orig_row][orig_col]
         #self.board[orig_row][orig_col] = orig_letter
                                
-        #if not self.is_scrabble_tile(self.shadow_board, orig_row, orig_col):
+        #if not self.has_scrabble_tile(self.shadow_board, orig_row, orig_col):
         #    raise ValueError('Attempted to calculate crossword at a non-letter tile: ' + 
         #                    str(self.shadow_board[orig_row][orig_col]) + " " + str(orig_row) + ", " + str(orig_col))
         #crossword.append(self.board[orig_row][orig_col])
         #if a tile already exists there, we do not need to check crosswords--
         #--because this tile has already been placed, and its crossword validated/scored in a previous move
-        if self.is_scrabble_tile(orig_row, orig_col):
+        if self.has_scrabble_tile(orig_row, orig_col):
             crossword_score = -1
             if DEBUG_PULL_VALID_CROSSWORD:
                 print("Existing tile already; no need to calculate crossword")
@@ -395,7 +418,7 @@ class Move:
             (row_delta, col_delta) = (0, -1)
         while True:
             (curr_row, curr_col) = (curr_row + row_delta, curr_col + col_delta)
-            if curr_row >= MIN_ROW and curr_col >= MIN_COL and self.is_scrabble_tile(curr_row, curr_col):
+            if curr_row >= MIN_ROW and curr_col >= MIN_COL and self.has_scrabble_tile(curr_row, curr_col):
                 crossword.insert(0, self.board[curr_row][curr_col]) #insert in front
             else:
                 break
@@ -409,7 +432,7 @@ class Move:
         (row_delta, col_delta) = (row_delta * -1, col_delta * -1)
         while True:
             (curr_row, curr_col) = (curr_row + row_delta, curr_col + col_delta)
-            if curr_row < MAX_ROW and curr_col < MAX_COL and self.is_scrabble_tile(curr_row, curr_col):
+            if curr_row < MAX_ROW and curr_col < MAX_COL and self.has_scrabble_tile(curr_row, curr_col):
                 crossword.append(self.board[curr_row][curr_col]) #append to end
             else:
                 break  
@@ -460,15 +483,15 @@ class Move:
             if row <= CENTER_ROW and col <= CENTER_COL:
                 valid_hook_spots.append((row, col))
         #check if this is a blank spot 
-        elif not self.is_scrabble_tile(row, col):
+        elif not self.has_scrabble_tile(row, col):
             #check if there is a non-blank spot on the board adjacent to it
-            #TBD: is_scrabble_tile returns false if we go out of bounds...
-            if self.is_scrabble_tile(row - 1, col) or \
-            self.is_scrabble_tile(row + 1, col) or \
-            self.is_scrabble_tile(row, col - 1) or \
-            self.is_scrabble_tile(row, col + 1):                          
+            #TBD: has_scrabble_tile returns false if we go out of bounds...
+            if self.has_scrabble_tile(row - 1, col) or \
+            self.has_scrabble_tile(row + 1, col) or \
+            self.has_scrabble_tile(row, col - 1) or \
+            self.has_scrabble_tile(row, col + 1):                          
                 valid_hook_spots.append((row, col))   
-                #elif self.is_scrabble_tile(self.board, curr_row, curr_col) and \
+                #elif self.has_scrabble_tile(self.board, curr_row, curr_col) and \
                 #((orig_direction == HORIZONTAL and self.is_empty_tile(self.board, curr_row, curr_col + 1)) or \
                 #(orig_direction == VERTICAL and self.is_empty_tile(self.board, curr_row + 1, curr_col))):
                 #    valid_starting_hook_spots.extend((curr_row, curr_col))
@@ -537,11 +560,12 @@ class Move:
             (front_row, front_col) = (start_row - 1, start_col)
             (back_row, back_col) = (end_row + 1, end_col)
         if front_or_back == FRONT_END:
-            return self.is_scrabble_tile(front_row, front_col)
+            return self.has_scrabble_tile(front_row, front_col)
         elif front_or_back == FRONT_OR_BACK_END:
-            return self.is_scrabble_tile(front_row, front_col) or self.is_scrabble_tile(back_row, back_col)
+            return self.has_scrabble_tile(front_row, front_col) or self.has_scrabble_tile(back_row, back_col)
         else:
             raise ValueError("Requested something besides FRONT_END or FRONT_OR_BACK_END")
+    #REFACTOR CORE RECURSIVE CALL -- keep building up the string 
     #tries to concatenate the input letter onto the prefix or suffix of the word    
     def concatenate_next(self, letter, curr_node, curr_rack, curr_word,
                        curr_offset, hook_row, hook_col, direction, boundary,

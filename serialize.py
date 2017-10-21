@@ -48,7 +48,7 @@ def wrapper_play_next_move(data):
         tiles_to_place = data["scrabble_game_play_wrapper"]["last_move"]["detail"]
         try: 
             full_placement = scrabble_board.convert_placed_tiles_to_full_placement(tiles_to_place)
-            score = scrabble_board.make_human_move(full_placement["start_row"], full_placement["start_col"], full_placement["direction"], full_placement["word"], human_player)
+            score = scrabble_board.attempt_human_move(full_placement["start_row"], full_placement["start_col"], full_placement["direction"], full_placement["word"], human_player)
             last_move_to_send["player"] = "Human"
             last_move_to_send["action"] = "Placed Tiles"
             last_move_to_send["detail"] = full_placement["word"] 
