@@ -1,6 +1,22 @@
 
 
 class game_controller:
+        
+    MIN_WORD_LENGTH = 2
+    SCRABBLE_CORPUS  = load_scrabble_corpus()
+
+    #1: Loading scrabble score and frequency dictionaries, as well as bag and entire corpurs
+    #source lexicon: http://www.wordgamedictionary.com/twl06/download/twl06.txt -- the FreeScrabbleDictionary_twl06.txt, used for North American tournaments
+    def load_scrabble_corpus():
+        scrabble_corpus= []
+        #os.pardir to go back up a level
+        with open(os.path.join(os.path.dirname( __file__ ), 'static', 'data', 'FreeScrabbleDictionary_twl06.txt'), newline = '') as raw_corpus:
+            for word in csv.reader(raw_corpus):
+                cleaned_word = ''.join(word).upper()
+                if len(cleaned_word) >= MIN_WORD_LENGTH: #this excludes 'A' and 'I'...for now...TBD
+                    scrabble_corpus.extend([cleaned_word])
+        return scrabble_corpus
+
     def __init__(self, board, 
                  scrabble_player_1, 
                  scrabble_player_2 = None,

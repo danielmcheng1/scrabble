@@ -1,16 +1,4 @@
 
-import os, csv, sys, random
-
-import scrabble_apprentice_gaddag 
-import scrabble_apprentice 
-
-'''
-class apprentice:
-    def __init__(board_obj):
-        self.board_obj = board_obj
-class board_config:
-    def __init__():
-'''    
 #wrapper to replace scrabble_game.game_play method so that we can interface with flask/web app            
 #change to be last move object separate....
 def wrapper_play_next_move(data):
@@ -169,12 +157,3 @@ def map_cell_to_player_view(row, col, scrabble_board):
 def map_rack_to_tile_view(rack, player_type, scrabble_score_dict):
     return [tile(letter, player_type, scrabble_score_dict).get_tile() for letter in rack]
         
-#TBD player name, type, or ID?    
-class tile:
-    def __init__(self, letter, player_type, scrabble_score_dict):
-        self.letter = letter
-        self.player_type = player_type
-        self.points = scrabble_score_dict[letter] 
-        
-    def get_tile(self):
-        return {'letter': self.letter, 'points': self.points, 'player_type': self.player_type}

@@ -1,5 +1,23 @@
 
 class board:
+    WILDCARD = ' ' #this are the two blank Scrabble tiles
+    HORIZONTAL = 1
+    VERTICAL = -1 #lose the benefit of boolean logic, but then you can multiply by -1 to flip
+    TRIPLE_LETTER = '3L'
+    TRIPLE_WORD = '3W'
+    DOUBLE_LETTER = '2L'
+    DOUBLE_WORD = '2W'
+    NO_BONUS = '  '
+    BINGO_BONUS = 50
+    RACK_MAX_NUM_TILES = 7
+    (MIN_ROW, MAX_ROW) = (0, 15)
+    (MIN_COL, MAX_COL) = (0, 15)
+    MAX_TURNS_PASSED = 6
+    (CENTER_ROW, CENTER_COL) = (7, 7)
+
+    FRONT_END = 1 #for checking if the spot before the first tile is filled
+    FRONT_OR_BACK_END = 2 #for checking if the spots before and after the word are filled
+
     #highest for loop appears first!! http://rhodesmill.org/brandon/2009/nested-comprehensions/
     def __init__(self, bag, score_dict, corpus):
         self.board = [[self.add_premium(row, col) for col in range(MIN_COL, MAX_COL)] for row in range(MIN_ROW, MAX_ROW)]
