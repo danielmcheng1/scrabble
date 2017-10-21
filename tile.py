@@ -31,7 +31,6 @@ SCRABBLE_SCORE_DICT['Y'] = 4
 SCRABBLE_SCORE_DICT['Z'] = 10        
         
 class Tile:
-    
     def __init__(self, letter, player, location):
         self.letter = letter
         self.player = player

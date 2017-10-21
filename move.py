@@ -29,14 +29,13 @@ class Move:
     def attempt_human_move(self, player, move_type, tiles):
         tiles = self.sort_tiles(tiles)
         if move_type == PLACE_TILES:
-            self.attempt_place_tiles()
+            self.attempt_place_tiles(tiles)
         elif move_type == EXCHANGE_TILES:
-            self.attempt_exchange_tiles()
+            self.attempt_exchange_tiles(tiles)
         elif move_type == PASS:
             self.attempt_pass()
         
-    def attempt_place_tiles(self):
-        print(start_row, start_col, direction, word) 
+    def attempt_place_tiles(self, tiles):
         num_tiles = len(word)
         if direction == HORIZONTAL:
             end_row = start_row + 1
@@ -168,8 +167,6 @@ class Move:
             return word_fix[::-1]
         return word_fix 
     
-    def sort_tiles(self, tiles):
-        return tiles
         
         
     #################
@@ -597,13 +594,7 @@ class Move:
                 print (indent + "unable to continue building suffix")
                 
                 
-                
-    #####
-            
-    def is_valid_word(self, word):
-        return "".join(word) in self.scrabble_corpus 
-        
-            
+               
             
             
         
@@ -668,3 +659,11 @@ class Move:
             player.rack.append(letter)
             print("Drew tile {0}".format(letter))
              
+ 
+    #####
+    def is_valid_word(self, tiles):
+        return "".join([tile.letter for tile in tiles]) in self.scrabble_corpus 
+        
+    def sort_tiles(self, tiles):
+        return sorted(tiles, key = lambda tile: (tile.location.get_row(), tile.location.get_col()))
+        
