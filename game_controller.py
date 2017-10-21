@@ -1,7 +1,10 @@
 
 
-class game_controller:
-        
+class GameController:
+    #global gaddag so that this only loads once to server all requests 
+    #REFACTOR check if memory loaded multiple times 
+    SCRABBLE_APPRENTICE_GADDAG = scrabble_apprentice_gaddag.read_gaddag_full()
+
     MIN_WORD_LENGTH = 2
     SCRABBLE_CORPUS  = load_scrabble_corpus()
 
@@ -16,7 +19,18 @@ class game_controller:
                 if len(cleaned_word) >= MIN_WORD_LENGTH: #this excludes 'A' and 'I'...for now...TBD
                     scrabble_corpus.extend([cleaned_word])
         return scrabble_corpus
-
+    
+    def get_game_info():
+        round_num
+        scores by player 
+        words played by player 
+        count_tiles_left
+        last move
+        game end reason
+        "gameInfo": {"scoreHuman": human_player.running_score, "scoreComputer": computer_player.running_score,
+                                   "wordsPlayedHuman": human_player.words_played, "wordsPlayedComputer": computer_player.words_played,
+                                   "tilesLeft": len(scrabble_board.bag),
+                                   "gameEndReason": scrabble_game_play.game_end_reason()}
     def __init__(self, board, 
                  scrabble_player_1, 
                  scrabble_player_2 = None,
@@ -32,16 +46,7 @@ class game_controller:
             if player:
                 self.play_order.append(player)
                 self.draw_tiles_end_of_turn(player, RACK_MAX_NUM_TILES)
-       
-    def print_game_state(self):
-        print("Current Round: " + str(self.round_num))
-        print("Play Order: WILL BE FINISHED")
-        #+ ", ".join(self.play_order))
-        print("Number of tiles left in the bag: " + str(len(scrabble_bag)))
-        self.board.print_board()
-        print("Current player: " + self.current_player.name)
-
-    
+          
         
                 
     def game_has_ended(self):

@@ -1,5 +1,17 @@
-
+import random 
 class Bag:
+    def __init__(self):
+        self.bag = load_scrabble_bag() 
+        
+    def load_scrabble_bag():
+        scrabble_bag = []
+        for letter in scrabble_freq_dict.keys():
+            scrabble_bag = scrabble_bag + [letter] * scrabble_freq_dict[letter]
+        random.shuffle(scrabble_bag)
+        return scrabble_bag
+    def count_tiles_left(self):
+        return len(scrabble_bag) 
+        
     def load_scrabble_freq_dict():
         scrabble_freq_dict = dict()
         
@@ -32,10 +44,3 @@ class Bag:
         scrabble_freq_dict['Z'] = 1
 
         return scrabble_freq_dict
-
-    def load_scrabble_bag(scrabble_freq_dict):
-        scrabble_bag = []
-        for letter in scrabble_freq_dict.keys():
-            scrabble_bag = scrabble_bag + [letter] * scrabble_freq_dict[letter]
-        random.shuffle(scrabble_bag)
-        return scrabble_bag
