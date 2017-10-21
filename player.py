@@ -9,6 +9,8 @@ class player:
         self.rack = []  
         self.running_score = 0
         self.words_played = []
+    def is_human(self):
+        return self.is_human 
         
     def print_player_state(self):
         print("Current running score for " + self.name + ": " + str(self.running_score) + " pts")
