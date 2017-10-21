@@ -1,14 +1,13 @@
 
-#instantiates a player bound to a particular board and common scrabble bag
-IS_HUMAN = True
-IS_COMPUTER = False
-class player:
-    def __init__(self, name, is_human, board):
+
+class Player:
+    def __init__(self, name, is_human,):
         self.name = name
         self.is_human = is_human
         self.rack = []  
         self.running_score = 0
         self.words_played = []
+        
     def is_human(self):
         return self.is_human 
         

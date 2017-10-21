@@ -12,7 +12,6 @@ class GameController:
     #source lexicon: http://www.wordgamedictionary.com/twl06/download/twl06.txt -- the FreeScrabbleDictionary_twl06.txt, used for North American tournaments
     def load_scrabble_corpus():
         scrabble_corpus= []
-        #os.pardir to go back up a level
         with open(os.path.join(os.path.dirname( __file__ ), 'static', 'data', 'FreeScrabbleDictionary_twl06.txt'), newline = '') as raw_corpus:
             for word in csv.reader(raw_corpus):
                 cleaned_word = ''.join(word).upper()
@@ -31,11 +30,7 @@ class GameController:
                                    "wordsPlayedHuman": human_player.words_played, "wordsPlayedComputer": computer_player.words_played,
                                    "tilesLeft": len(scrabble_board.bag),
                                    "gameEndReason": scrabble_game_play.game_end_reason()}
-    def __init__(self, board, 
-                 scrabble_player_1, 
-                 scrabble_player_2 = None,
-                 scrabble_player_3 = None,
-                 scrabble_player_4 = None):
+    def __init__(self):
         self.board = board
         self.current_player = scrabble_player_1
         self.round_num = 1 
