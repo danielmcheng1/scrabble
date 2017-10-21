@@ -8,6 +8,9 @@ class Location:
     
     def get_col(self):
         return self.col 
+    
+    def get_tuple(self):
+        return (self.row, self.col) 
         
     def offset(self, row_delta, col_delta):
         return Location(self.row + row_delta, self.col + col_delta)
