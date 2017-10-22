@@ -403,41 +403,27 @@ class Move:
             
                     
     #################
-    def attempt_computer_move(self, player):        
-        self.generate_all_possible_moves(player.rack)
+    def attempt_computer_move(self, player, board):        
+        self.generate_all_possible_moves(player.rack, board)
         if self.comp_max_word:
             self.place_word(self.comp_max_row, self.comp_max_col, self.comp_max_direction, self.comp_max_word, player)
         return (self.comp_max_score, self.comp_max_word)
 
-    def generate_all_possible_moves(self, rack):
-               
-        for row in range(MIN_ROW, MAX_ROW):
-            valid_hook_spots = self.pull_hooks(start_row, start_col, direction, player.rack)
-            valid_crossword_score_dict = self.pull_crosswords(start_row, start_col, direction, player.rack)
-                
-            prev_hook_spot = MIN_COL
-            for (hook_row, hook_col) in valid_hook_spots:
-                self.generate_moves_for_hook_spot(None, rack, [], 0, hook_row, hook_col, \
-                                                  HORIZONTAL, prev_hook_spot, valid_crossword_score_dict, "")
-                prev_hook_spot = hook_col + 1
-        
+    def generate_all_possible_moves(self, rack, board):
+        # iterate over all  possible hook spots, building up words going both HORIZONTALLY and VERTICALLY 
+        # maintain pointer to the previous hook spot so that we do not recalculate possible words for that spot--when moving back from the current spot 
+        prev_hook_spot = MIN_COL
+        for (hook_row, hook_col) in valid_hook_spots:
+            self.generate_moves_for_hook_spot(None, rack, [], 0, hook_row, hook_col, HORIZONTAL, prev_hook_spot)
+            prev_hook_spot = hook_col + 1
+       
+        prev_hook_spot = MIN_ROW
+        for (hook_row, hook_col) in valid_hook_spots:
+            self.generate_moves_for_hook_spot(None, rack, [], 0, hook_row, hook_col, VERTICAL, prev_hook_spot)
+            prev_hook_spot = hook_row + 1
 
-
-        for col in range(MIN_COL, MAX_COL):
-            valid_hook_spots = self.pull_hooks(start_row, start_col, direction, player.rack)
-            valid_crossword_score_dict = self.pull_crosswords(start_row, start_col, direction, player.rack)    
-            prev_hook_spot = MIN_ROW
-            for (hook_row, hook_col) in valid_hook_spots:
-                if DEBUG_ALL_MOVES:
-                    print("Generating moves for this hook spot: " + str((hook_row, hook_col)))
-                self.generate_moves_for_hook_spot(None, rack, [], 0, hook_row, hook_col, \
-                                                  VERTICAL, prev_hook_spot, valid_crossword_score_dict, "")
-                prev_hook_spot = hook_row + 1
-
-                
-    def generate_moves_for_hook_spot(self, curr_node, curr_rack, curr_word, 
-                       curr_offset, hook_row, hook_col, direction, boundary,
-                       valid_crossword_score_dict, indent):        
+    // search_context = helps build word, constraint = helps search the gaddag, never changes            
+    def generate_moves_for_hook_spot(self, board, curr_rack, curr_word, curr_node, curr_offset, hook_row, hook_col, direction, boundary):        
         if direction == HORIZONTAL:
             (curr_row, curr_col) = (hook_row, hook_col + curr_offset)
         else:
@@ -447,18 +433,13 @@ class Move:
         if (direction == HORIZONTAL and curr_col < boundary) or \
            (direction == VERTICAL and curr_row < boundary) or \
            (curr_col >= MAX_COL) or (curr_row >= MAX_ROW):
-            if DEBUG_GENERATE_MOVES:
-                print (indent + GEN_MOVES_PRINT_INDENT + "reached a boundary")
             return
         
         #if there is already a tile here, try to place this as the next move
         if self.has_scrabble_tile(curr_row, curr_col):
             letter = self.board[curr_row][curr_col]
-            if curr_node is None:
-                curr_node = SCRABBLE_APPRENTICE_GADDAG.start_node
             self.concatenate_next(letter, curr_node, curr_rack, curr_word,
-                       curr_offset, hook_row, hook_col, direction, boundary,
-                       valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT + GEN_MOVES_PRINT_INDENT)
+                       curr_offset, hook_row, hook_col, direction, boundary)
 
         #otheriwse, if we still have tiles left, try to place
         elif curr_rack:
@@ -468,13 +449,50 @@ class Move:
                     if letter in curr_rack:
                         new_rack = curr_rack[:]
                         new_rack.remove(letter)
-                        if DEBUG_GENERATE_MOVES:
-                            print(indent + GEN_MOVES_PRINT_INDENT + "found letter " + letter + "--new rack is " + str(new_rack))
-                        if curr_node is None:
-                            curr_node = SCRABBLE_APPRENTICE_GADDAG.start_node
                         self.concatenate_next(letter, curr_node, new_rack, curr_word,
                                    curr_offset, hook_row, hook_col, direction, boundary,
                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT + GEN_MOVES_PRINT_INDENT)
+        
+    #REFACTOR CORE RECURSIVE CALL -- keep building up the string 
+    #tries to concatenate the input letter onto the prefix or suffix of the word    
+    def process_letter_in_gaddag(self, letter, curr_node = SCRABBLE_APPRENTICE_GADDAG.start_node, curr_rack, curr_word,
+                       curr_offset, hook_row, hook_col, direction, boundary):
+        if curr_node is None:
+            curr_node = 
+        #if we've reached an ending node, save this word (for both prefix and suffix b/c the prefix could be the WHOLE word)
+        if letter in curr_node.eow_set:
+            if curr_offset <= 0:
+                completed_word = [letter] + curr_word
+            else:
+                completed_word = curr_word + [letter]
+            if not self.ends_are_filled(curr_offset, hook_row, hook_col, direction, completed_word, FRONT_OR_BACK_END):
+                self.computer_save_word_and_score(curr_offset, hook_row, hook_col, direction, completed_word, 
+                                           valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT) 
+        #placing prefix
+        if curr_offset <= 0:
+            if letter in curr_node.edges.keys():
+                curr_node = curr_node.edges[letter]
+                new_word = [letter] + curr_word
+                self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
+                                    curr_offset - 1, hook_row, hook_col, direction, boundary,
+                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
+                #if the next node leads to a hook, then we have to reverse 
+                #(unless we're bumping up against another tile on the board)
+                if scrabble_apprentice_gaddag.GADDAG_HOOK in curr_node.edges.keys() and \
+                not self.ends_are_filled(curr_offset, hook_row, hook_col, direction, new_word, FRONT_END):
+                    curr_node = curr_node.edges[scrabble_apprentice_gaddag.GADDAG_HOOK]
+                    self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
+                                    1, hook_row, hook_col, direction, boundary,
+                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
+        #placing suffix
+        else:      
+            if letter in curr_node.edges.keys():
+                curr_node = curr_node.edges[letter]
+                new_word = curr_word + [letter]
+                self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
+                                    curr_offset + 1, hook_row, hook_col, direction, boundary,
+                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
+                
         
         
     def find_coordinate_bounds_of_word(self, curr_offset, hook_row, hook_col, direction, word):
@@ -511,46 +529,6 @@ class Move:
         else:
             raise ValueError("Requested something besides FRONT_END or FRONT_OR_BACK_END")
             
-    #REFACTOR CORE RECURSIVE CALL -- keep building up the string 
-    #tries to concatenate the input letter onto the prefix or suffix of the word    
-    def concatenate_next(self, letter, curr_node, curr_rack, curr_word,
-                       curr_offset, hook_row, hook_col, direction, boundary,
-                       valid_crossword_score_dict, indent):
-        #if we've reached an ending node, save this word (for both prefix and suffix b/c the prefix could be the WHOLE word)
-        if letter in curr_node.eow_set:
-            if curr_offset <= 0:
-                completed_word = [letter] + curr_word
-            else:
-                completed_word = curr_word + [letter]
-            if not self.ends_are_filled(curr_offset, hook_row, hook_col, direction, completed_word, FRONT_OR_BACK_END):
-                self.computer_save_word_and_score(curr_offset, hook_row, hook_col, direction, completed_word, 
-                                           valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT) 
-        #placing prefix
-        if curr_offset <= 0:
-            if letter in curr_node.edges.keys():
-                curr_node = curr_node.edges[letter]
-                new_word = [letter] + curr_word
-                self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
-                                    curr_offset - 1, hook_row, hook_col, direction, boundary,
-                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
-                #if the next node leads to a hook, then we have to reverse 
-                #(unless we're bumping up against another tile on the board)
-                if scrabble_apprentice_gaddag.GADDAG_HOOK in curr_node.edges.keys() and \
-                not self.ends_are_filled(curr_offset, hook_row, hook_col, direction, new_word, FRONT_END):
-                    curr_node = curr_node.edges[scrabble_apprentice_gaddag.GADDAG_HOOK]
-                    self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
-                                    1, hook_row, hook_col, direction, boundary,
-                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
-        #placing suffix
-        else:      
-            if letter in curr_node.edges.keys():
-                curr_node = curr_node.edges[letter]
-                new_word = curr_word + [letter]
-                self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
-                                    curr_offset + 1, hook_row, hook_col, direction, boundary,
-                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
-                
-        
         
 
     #this is called once we hit the end of a word     
