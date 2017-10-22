@@ -5,30 +5,22 @@ class Move:
     PLACE_TILES = "Place tiles"
     EXCHANGE_TILES = "Exchange tiles"
     PASS = "Pass"
+    MADE_ILLEGAL_MOVE = "Made illegal move"
     HORIZONTAL = 1
     VERTICAL = -1
-    RACK_MAX_NUM_TILES = 7
     BINGO_BONUS = 50
     
-    def __init__(self, board, bag, player, attempted_tiles = None, move_type = None):
+    def __init__(self, board, bag, player, action = None, tiles = None):
         self.all_hook_spots = self.pull_all_hook_spots(board)
         self.all_crossword_scores = self.pull_all_crossword_scores(board, player)
+        self.result = {"player": player, "action": action, "success_flag": False, "detail": {}}
         
         if self.player.is_human():
-            self.attempt_human_move(board, bag, player, attempted_tiles)
+            self.attempt_human_move(board, bag, player, tiles)
         else:
             self.attempt_computer_move(board, bag, player) 
         
          
-    # returns result of attempted move by computer or human 
-    # "attempted" because human tile placement may be invalid
-    # game controller classes uses this to update the board/rack and return to the front end 
-    def get_move(self):
-        result = {}
-        result["player"] = self.player 
-        result["action"] = "FINISHED MOVE"
-        result["detail"] = "SCRABBLE"
-        result["success"] = True 
                
     #################
     def attempt_computer_move(self, board, bag, player):
@@ -48,7 +40,7 @@ class Move:
             self.validate_in_one_row_or_column(sorted_tiles)
             self.validate_tiles_hook_onto_existing(sorted_tiles)
         except as e:
-            self.log_error(e)
+            self.log_error_human(e)
             return 
             
         direction = self.get_direction(sorted_tiles) 
@@ -67,14 +59,14 @@ class Move:
                 break  
             # player did not place anything here 
             elif sorted_tiles[tile_index].location != location:
-                self.log_error("Placed tiles must be connected to each other") 
+                self.log_error_human("Placed tiles must be connected to each other") 
                 return 
             # player placed a tile here 
             else:
                 try:
                     self.validate_valid_crossword_formed(location, direction, sorted_tiles[tile_index].letter)
                 except as e:
-                    self.log_error(e)
+                    self.log_error_human(e)
                     return 
                 tile_word.append(sorted_tiles[tile_index]) 
                 tile_index += 1
@@ -89,7 +81,7 @@ class Move:
         try:
             self.validate_tile_word_in_dictionary(tile_word)
         except as e:
-            self.log_error(e)
+            self.log_error_human(e)
             return 
         self.log_success(PLACE_TILES, tile_word)
         
@@ -161,7 +153,7 @@ class Move:
         
         #add in crossword scores and bingo scores
         total_score += crossword_scores
-        if num_tiles_placed == RACK_MAX_NUM_TILES:
+        if num_tiles_placed == rack.MAX_NUM_TILES:
             total_score += BINGO_BONUS
             
         return total_score        
@@ -248,11 +240,58 @@ class Move:
         
     #####
     ### VALIDATION 
-    def log_error(e):
-        last_move_to_send["player"] = "Human"
-        last_move_to_send["action"] = "Made Illegal Move" 
-        last_move_to_send["detail"] = "".join(e.args)
-
+    def log_error_human(e): 
+        result["success_flag"] = False 
+        result["action"] = MADE_ILLEGAL_MOVE
+        result["detail"]["description"] = "".join(e.args)
+        
+    def log_success_human_placed(tile_word, tiles_used, score):
+        result["success_flag"] = True 
+        result["action"] = PLACE_TILES
+        result["detail"]["word"] = "".join([tile.letter for tile in tile_word])
+        result["detail"]["tiles_used"] = tiles_used 
+        result["detail"]["score"] = score 
+        
+    def log_success_computer_placed(word, context):
+        result["success_flag"] = True 
+        result["action"] = PLACE_TILES
+        tiles_used = context.tiles_used  
+        word = context.word 
+        score = self.calc_word_score(tiles_
+        if score > result["detail"].get("score", 0):
+            result["detail"]["score"] = score 
+            result["detail"]["word"] = word
+            result["detail"]["tiles_used"] = tiles_used 
+            
+                  self.location = location 
+            self.generating_prefix = generating_prefix
+            self.rack = rack.copy_rack()
+            self.word = word[:] if word is not None else []
+            self.letter = letter if letter is not None else ""
+            self.node = node if node is not None else SCRABBLE_APPRENTICE_GADDAG.start_node 
+            self.tiles_placed = tiles_placed[:] if tiles_placed is not None else []
+         
+    def log_success_exchanged(tiles_used):
+        result["success_flag"] = True 
+        result["action"] = EXCHANGE_TILES
+        result["detail"]["word"] = "EXCHANGED"
+        result["detail"]["tiles_used"] = [] 
+        result["detail"]["score"] = 0 
+        
+    def log_success_passed():
+        result["success_flag"] = True 
+        result["action"] = PASS
+        result["detail"]["word"] = "PASSED"
+        result["detail"]["tiles_used"] = [] 
+        result["detail"]["score"] = 0
+        
+    # returns result of attempted move by computer or human 
+    # "attempted" because human tile placement may be invalid
+    # game controller classes uses this to update the board/rack and return to the front end 
+    def get_result(self):
+        return self.result 
+        
+        
     def validate_tile_word_in_dictionary(self, tile_word):
         self.validate_word_in_dictionary([tile.letter for tile in tile_word])
         
@@ -299,9 +338,9 @@ class Move:
      def is_valid_hook_spot(self, board, location):
         (row, col) = location.get_tuple()
         if board.num_words_placed == 0:
-            if row <= board.CENTER_ROW and row > board.CENTER_ROW - RACK_MAX_NUM_TILES:
+            if row <= board.CENTER_ROW and row > board.CENTER_ROW - rack.MAX_NUM_TILES:
                 return True 
-            elif col <= board.CENTER_COL and col > board.CENTER_COL - RACK_MAX_NUM_TILES:
+            elif col <= board.CENTER_COL and col > board.CENTER_COL - rack.MAX_NUM_TILES:
                 return True 
             else:
                 return False 
@@ -335,9 +374,8 @@ class Move:
 
     def pull_crossword_scores_at_location(self, location, orig_direction, rack):
         #dedupe the rack so we only compute crossword  scores for minimum set of letters 
-        rack_uniq = set(rack)
         letters_to_score = {}
-        for letter in rack_uniq:
+        for letter in rack.get_set():
             #score of negative one means crossword is invalid
             crossword_score = self.pull_crossword_score_for_letter(letter, location, orig_direction)
             if crossword_score != -1:
@@ -400,11 +438,11 @@ class Move:
     # search_context = helps build word
     # search constraint = helps search the gaddag and board, never changes  for a given call to generate_moves_for_hook_spot  
     class Context:
-        def __init__(self, rack, location, generating_prefix, letter, word, node, tiles_placed):
+        def __init__(self, rack, location, generating_prefix, letter, tile_word, node, tiles_placed):
             self.location = location 
             self.generating_prefix = generating_prefix
-            self.rack = rack[:] if rack is not None else []
-            self.word = word[:] if word is not None else []
+            self.rack = rack.copy_rack()
+            self.tile_word = tile_word[:] if tile_word is not None else []
             self.letter = letter if letter is not None else ""
             self.node = node if node is not None else SCRABBLE_APPRENTICE_GADDAG.start_node 
             self.tiles_placed = tiles_placed[:] if tiles_placed is not None else []
@@ -412,18 +450,22 @@ class Move:
         def get_location_tuple(self):
             return self.location.get_tuple() 
             
-        def remove_letter_from_rack(self, letter):
-            return Context(self.rack[:].remove(letter), self.location, self.generating_prefix, letter, self.word, self.node)
+        def get_word(self):
+            return "".join([tile.letter for tile in self.tile_word])
+            
+        def rack_contains_letter(self, letter):
+            return self.rack.contains_letter(letter)
+            
+        def rack_has_tiles_left(self):
+            return self.rack.has_tiles_left()
+            
+            
             
         def accept_letter(self, letter):
             return Context(self.rack, self.location, self.generating_prefix, letter, self.word, self.node) 
             
-        def rack_contains_letter(self, letter):
-            return letter in self.rack 
-            
-        def has_tiles_left_on_rack(self):
-            return len(rack) > 0
-            
+        def remove_letter_from_rack(self, letter):
+            return Context(self.rack.remove_one_tile(letter), self.location, self.generating_prefix, letter, self.word, self.node)
         #stop placing if we've reached the previous hook spot (or if we pass the max boundary of the board)
         def hit_boundary(self, board, constraint):
             if constraint.direction == HORIZONTAL and self.curr_col < constraint.boundary:
@@ -489,18 +531,41 @@ class Move:
     #tries to concatenate the input letter onto the prefix or suffix of the word    
     def process_letter_in_gaddag(self, board, constraint, context):
         #if we've reached an ending node, save this word (for both prefix and suffix b/c the prefix could be the WHOLE word)
-        if letter in curr_node.eow_set:
-            if curr_offset <= 0:
-                completed_word = [letter] + curr_word
-            else:
-                completed_word = curr_word + [letter]
+        if context.reached_end_of_word():
+            completed_word_context = context.move_letter_to_word()
+            # check that there is not a tile to the left/right of our word (which would invalidate this being the beginning/end of the word )
+            if completed_word_context.has_room():
+                self.log_success_computer_placed(completed_word_context)
+                
             if not self.ends_are_filled(curr_offset, hook_row, hook_col, direction, completed_word, FRONT_OR_BACK_END):
                 self.computer_save_word_and_score(curr_offset, hook_row, hook_col, direction, completed_word, 
                                            valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT) 
         def reached_end_of_word(self):
             return self.letter in self.node.eow_set 
-        def save_word(self):
-            word
+        def move_letter_to_word(self):
+            if self.generating_prefix:
+                completed_word = [self.letter] + self.word 
+            else:
+                completed_word = self.word + [self.letter]
+            return Context(letter = "", completed_word) 
+            
+        def has_room(self, board, constraint, context):
+            if context.generating_prefix:
+                sign = -1
+            else:
+                sign = 1
+            if constraint.direction == HORIZONTAL:
+                if board.has_tile(context.location.offset(sign, 0)):
+                    return False 
+                else:
+                    return True 
+            else:
+                if board.has_tile(context.location.offset(0, sign)):
+                    return False 
+                else:
+                    return True 
+                    
+                    
         #placing prefix
         if curr_offset <= 0:
             if letter in curr_node.edges.keys():
