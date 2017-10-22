@@ -461,11 +461,12 @@ class Move:
             
             
             
-        def accept_letter(self, letter):
-            return Context(self.rack, self.location, self.generating_prefix, letter, self.word, self.node) 
+        def accept_tile_on_board(self, tile):
+            return Context(letter = tile.letter, self.tile_word + [tile])
             
         def remove_letter_from_rack(self, letter):
-            return Context(self.rack.remove_one_tile(letter), self.location, self.generating_prefix, letter, self.word, self.node)
+            return Context(self.rack.remove_one_tile(letter))
+            
         #stop placing if we've reached the previous hook spot (or if we pass the max boundary of the board)
         def hit_boundary(self, board, constraint):
             if constraint.direction == HORIZONTAL and self.curr_col < constraint.boundary:
@@ -516,8 +517,9 @@ class Move:
         
         # first try to use an existing board tile as the next letter in the word 
         if board.has_tile(context.location):     
-            self.concatenate_next(board, constraint, context.accept_letter(board.get_tile(context.location)))
+            self.concatenate_next(board, constraint, context.accept_tile_on_board(board.get_tile(context.location)))
             return 
+            
         # otherwise, see if we can tiles left in our rack 
         if not context.has_tiles_left_on_rack():
             return 
