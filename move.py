@@ -1,6 +1,6 @@
 
-
-    
+import tile  
+import location     
 class Move: 
     PLACE_TILES = "Place tiles"
     EXCHANGE_TILES = "Exchange tiles"
@@ -12,7 +12,7 @@ class Move:
     
     def __init__(self, board, bag, player, attempted_tiles = None, move_type = None):
         self.all_hook_spots = self.pull_all_hook_spots(board)
-        (self.all_crossword_scores_horizontal, self.all_crossword_scores_vertical) = self.pull_all_crossword_scores(board, player)
+        self.all_crossword_scores = self.pull_all_crossword_scores(board, player)
         
         if self.player.is_human():
             self.attempt_human_move(board, bag, player, attempted_tiles)
@@ -119,7 +119,9 @@ class Move:
         tile_col = tile.location.get_col() 
         return board.has_scrabble_tile(tile_row, tile_col - 1) or board.has_scrabble_tile(tile_row, tile_col + 1)
     
-    def find_start_of_word(self, some_location, direction, board):
+    # walk upwards/leftwards from the first player-placed tile, until there are no more existing board tiles 
+    # this must then be the start of the actual word 
+    def find_start_of_word(self, location_of_first_placed_tile, direction, board):
         start_location = some_location 
         while board.has_tile(location):
             if direction == HORIZONTAL:
@@ -245,10 +247,8 @@ class Move:
             total_score += letter_multiplier * tile_word[i].points 
             
             # add in scores from crossword (multipliers already included in these) 
-            if direction == HORIZONTAL and (row, col) in all_crossword_scores_horizontal.keys(): 
-                crossword_scores += all_crossword_scores_horizontal[(row, col)][tile_word[i].letter]
-            elif direction == VERTICAL and (row, col) in all_crossword_scores_vertical.keys(): 
-                crossword_scores += all_crossword_scores_vertical[(row, col)][tile_word[i].letter]
+            if letter in all_crossword_scores[direction][(row, col)].keys():
+                crossword_scores += all_crossword_scores[direction][(row, col)][letter]
         
         #final word multiplier bonus
         total_score *= word_multiplier
@@ -497,9 +497,7 @@ class Move:
         else:
             cross_direction_description == "horizontally"
         (row, col) = location.get_tuple()
-        if (row, col) not in all_crossword_scores.keys():
-            raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(letter, cross_direction_description))
-        if letter not in valid_crossword_score_dict[(row, col)].keys():
+        if letter not in all_crossword_scores[direction][(row, col)].keys():
             raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(letter, cross_direction_description))
      
     #####
@@ -524,9 +522,9 @@ class Move:
         crossword_scores_for_vertical = {}
         for row in range(board.MIN_ROW, board.MAX_ROW):
             for col in range(board.MIN_COL, board.MAX_COL):
-                crossword_scores_for_horizontal[(row, col)] = pull_crossword_scores_at_location(row, col, HORIZONTAL, rack) 
-                crossword_scores_for_vertical[(row, col)] = pull_crossword_scores_at_location(row, col, VERTICAL, rack) 
-        return (crossword_scores_for_horizontal, crossword_scores_for_vertical) 
+                crossword_scores_for_horizontal[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), HORIZONTAL, rack) 
+                crossword_scores_for_vertical[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), VERTICAL, rack) 
+        return {HORIZONTAL: crossword_scores_for_horizontal, VERTICAL: crossword_scores_for_vertical)}
 
      def is_valid_hook_spot(self, board, location):
         (row, col) = location.get_tuple()
@@ -551,13 +549,13 @@ class Move:
                     return False 
                     
     
-    def pull_crossword_scores_at_location(self, orig_row, orig_col, orig_direction, rack):
-        #dedupe the rack so we only compute score for minimum set of letters 
+    def pull_crossword_scores_at_location(self, location, orig_direction, rack):
+        #dedupe the rack so we only compute crossword  scores for minimum set of letters 
         rack_uniq = set(rack)
         letters_to_score = {}
         for letter in rack_uniq:
             #score of negative one means crossword is invalid
-            crossword_score = self.pull_crossword_score_for_letter(letter, orig_row, orig_col, orig_direction)
+            crossword_score = self.pull_crossword_score_for_letter(letter, location, orig_direction)
             if crossword_score != -1:
                 letters_to_score[letter] = crossword_score 
         return letters_to_score 
@@ -566,51 +564,43 @@ class Move:
         # returns a score of -1 if the input letter creates an invalid crossword, 
         # a score of 0 if there is no crossword (so any tile is OK)
         # and a 1+ score if there is a valid crossword
-    def pull_crossword_score_for_letter(self, orig_letter, orig_row, orig_col, orig_direction):
-        #if a tile already exists there, we do not need to check crosswords, because this must have been scored already in a previous move
-        if self.has_scrabble_tile(orig_row, orig_col):
-            crossword_score = -1
-            return crossword_score
-        crossword = []
-        crossword.append(orig_letter)
-
-        #first find the beginning of the word
-        (curr_row, curr_col) = (orig_row, orig_col)
-        if orig_direction == HORIZONTAL:
-            (row_delta, col_delta) = (-1, 0)
-        else:
-            (row_delta, col_delta) = (0, -1)
-        while True:
-            (curr_row, curr_col) = (curr_row + row_delta, curr_col + col_delta)
-            if curr_row >= MIN_ROW and curr_col >= MIN_COL and self.has_scrabble_tile(curr_row, curr_col):
-                crossword.insert(0, self.board[curr_row][curr_col]) #insert in front
-            else:
-                break
-                
-        #save the beginning row/col
-        crossword_start_row = curr_row - row_delta #undo the most recent delta operation that caused the loop break
-        crossword_start_col = curr_col - col_delta
-        
-        #reset and find the end of the word
-        (curr_row, curr_col) = (orig_row, orig_col)
-        (row_delta, col_delta) = (row_delta * -1, col_delta * -1)
-        while True:
-            (curr_row, curr_col) = (curr_row + row_delta, curr_col + col_delta)
-            if curr_row < MAX_ROW and curr_col < MAX_COL and self.has_scrabble_tile(curr_row, curr_col):
-                crossword.append(self.board[curr_row][curr_col]) #append to end
-            else:
-                break  
+    def pull_crossword_score_for_letter(self, letter, location, orig_direction):
+        # if a tile already exists there, no crosswords can be placed here 
+        if board.has_tile(location):
+            return -1
+            
+        # find the start location for this crossword
+        crossword_direction = orig_direction * -1
+        start_location = self.find_start_of_word(location, crossword_direction, board)
         
         #no crosswords were formed, so it is ok to place this tile here
-        if len(crossword) == 1:
-            crossword_score = 0 
-        #we formed a valid crossword-->calculate the score!
-        elif self.is_valid_word(crossword):
-            crossword_score = self.calc_word_score (crossword_start_row, crossword_start_col, \
-                                                          -1 * orig_direction, crossword, {})
-        #we formed an invalid crossword
-        else:
-            crossword_score = -1  
+        if start_location == location:
+            return 0
+            
+        # generate the crossword 
+        tile_crossword = []
+        current_location = start_location 
+        while True:
+            if board.has_tile(location):
+                tile_crossword.append(board.get_tile(location))
+            else:
+                # create a tile for this temporary crossword letter since we finding all potential crosswords  
+                if current_location == start_location:
+                    tile_crossword.append(tile.Tile(letter, self.player, location))
+                # no more board tiles means we've hit the end of the crossword 
+                else:
+                    break 
+            if direction == HORIZONTAL:
+                location = location.offset(1, 0)
+            else:
+                location = location.offset(0, 1)
+        # check if we formed a valid word 
+        try:
+            self.validate_tile_word_in_dictionary(tile_crossword)              
+        # return if we formed an invalid crossword
+        except:
+            return -1
         
-        return crossword_score
+        # calculate the score 
+        return self.calc_word_score(tile_crossword, board) 
                         
