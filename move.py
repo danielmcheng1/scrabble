@@ -91,7 +91,7 @@ class Move:
         except as e:
             self.log_error(e)
             return 
-        self.log_success(PLACE_TILES)
+        self.log_success(PLACE_TILES, tile_word)
         
         
         #score and place word
@@ -400,22 +400,27 @@ class Move:
     # search_context = helps build word
     # search constraint = helps search the gaddag and board, never changes  for a given call to generate_moves_for_hook_spot  
     class Context:
-        def __init__(self, rack, location, generating_prefix, letter, word, node):
-            self.rack = rack[:]
+        def __init__(self, rack, location, generating_prefix, letter, word, node, tiles_placed):
             self.location = location 
             self.generating_prefix = generating_prefix
+            self.rack = rack[:] if rack is not None else []
             self.word = word[:] if word is not None else []
             self.letter = letter if letter is not None else ""
             self.node = node if node is not None else SCRABBLE_APPRENTICE_GADDAG.start_node 
+            self.tiles_placed = tiles_placed[:] if tiles_placed is not None else []
         
         def get_location_tuple(self):
             return self.location.get_tuple() 
             
-        def move_letter_from_rack_to_board(self, letter):
-            return Context(self.rack[:].remove(letter), self.location, self.generating_prefix, letter, self.word + letter, self.node)
+        def remove_letter_from_rack(self, letter):
+            return Context(self.rack[:].remove(letter), self.location, self.generating_prefix, letter, self.word, self.node)
             
         def accept_letter(self, letter):
             return Context(self.rack, self.location, self.generating_prefix, letter, self.word, self.node) 
+            
+        def rack_contains_letter(self, letter):
+            return letter in self.rack 
+            
         def has_tiles_left_on_rack(self):
             return len(rack) > 0
             
@@ -452,7 +457,7 @@ class Move:
             constraint = Constraint(hook_row, hook_col, HORIZONTAL, boundary)
             context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
             
-            self.generate_moves_for_hook_spot(board, context, constraint)
+            self.generate_moves_for_hook_spot(board, constraint, context)
             boundary = hook_col + 1
        
         boundary = MIN_ROW
@@ -460,33 +465,29 @@ class Move:
             constraint = Constraint(hook_row, hook_col, VERTICAL, boundary)
             context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
             
-            self.generate_moves_for_hook_spot(board, context, constraint)
+            self.generate_moves_for_hook_spot(board, constraint, context)
             boundary = hook_row + 1
          
-    def generate_moves_for_hook_spot(self, board, context, constraint):  
+    def generate_moves_for_hook_spot(self, board, constraint, context):  
         if context.hit_boundary(constraint):
             return
         
-        #if there is already a tile here, try to place this as the next move
+        # first try to use an existing board tile as the next letter in the word 
         if board.has_tile(context.location):     
-            self.concatenate_next(board, context.accept_letter(board.get_tile(context.location)), constraint)
-
-        #otherwise, if we still have tiles left, try to place
-        elif context.has_tiles_left_on_rack():
-            #iterate over the set of valid crossletters
-            if (curr_row, curr_col) in valid_crossword_score_dict.keys():
-                for letter in valid_crossword_score_dict[(curr_row, curr_col)].keys():
-                    if letter in curr_rack:
-                        new_rack = curr_rack[:]
-                        new_rack.remove(letter)
-                        self.concatenate_next(letter, curr_node, new_rack, curr_word,
-                                   curr_offset, hook_row, hook_col, direction, boundary,
-                                   valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT + GEN_MOVES_PRINT_INDENT)
+            self.concatenate_next(board, constraint, context.accept_letter(board.get_tile(context.location)))
+            return 
+        # otherwise, see if we can tiles left in our rack 
+        if not context.has_tiles_left_on_rack():
+            return 
         
+        # try placing any letters in our rack that also form valid crossword 
+        for letter in valid_crossword_score_dict[context.get_location_tuple()].keys():
+            if context.rack_contains_letter(letter):
+                self.concatenate_next(board, constraint, context.remove_letter_from_rack(letter)) 
+                
     #REFACTOR CORE RECURSIVE CALL -- keep building up the string 
     #tries to concatenate the input letter onto the prefix or suffix of the word    
-    def process_letter_in_gaddag(self, letter, curr_node = , curr_rack, curr_word,
-                       curr_offset, hook_row, hook_col, direction, boundary):
+    def process_letter_in_gaddag(self, board, constraint, context):
         #if we've reached an ending node, save this word (for both prefix and suffix b/c the prefix could be the WHOLE word)
         if letter in curr_node.eow_set:
             if curr_offset <= 0:
@@ -496,6 +497,10 @@ class Move:
             if not self.ends_are_filled(curr_offset, hook_row, hook_col, direction, completed_word, FRONT_OR_BACK_END):
                 self.computer_save_word_and_score(curr_offset, hook_row, hook_col, direction, completed_word, 
                                            valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT) 
+        def reached_end_of_word(self):
+            return self.letter in self.node.eow_set 
+        def save_word(self):
+            word
         #placing prefix
         if curr_offset <= 0:
             if letter in curr_node.edges.keys():
