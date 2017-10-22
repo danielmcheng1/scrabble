@@ -19,12 +19,6 @@ class Move:
         else:
             self.attempt_computer_move(board, bag, player) 
         
-        self.comp_max_score = 0
-        self.comp_max_word = []
-        self.comp_max_row = None
-        self.comp_max_col = None
-        self.comp_max_direction = None
-        self.comp_all_possible_moves = {HORIZONTAL:{}, VERTICAL:{}}
          
     # returns result of attempted move by computer or human 
     # "attempted" because human tile placement may be invalid
@@ -403,6 +397,47 @@ class Move:
             
                     
     #################
+    # search_context = helps build word
+    # search constraint = helps search the gaddag and board, never changes  for a given call to generate_moves_for_hook_spot  
+    class Context:
+        def __init__(self, rack, location, generating_prefix, letter, word, node):
+            self.rack = rack[:]
+            self.location = location 
+            self.generating_prefix = generating_prefix
+            self.word = word[:] if word is not None else []
+            self.letter = letter if letter is not None else ""
+            self.node = node if node is not None else SCRABBLE_APPRENTICE_GADDAG.start_node 
+        
+        def get_location_tuple(self):
+            return self.location.get_tuple() 
+            
+        def move_letter_from_rack_to_board(self, letter):
+            return Context(self.rack[:].remove(letter), self.location, self.generating_prefix, letter, self.word + letter, self.node)
+            
+        def accept_letter(self, letter):
+            return Context(self.rack, self.location, self.generating_prefix, letter, self.word, self.node) 
+        def has_tiles_left_on_rack(self):
+            return len(rack) > 0
+            
+        #stop placing if we've reached the previous hook spot (or if we pass the max boundary of the board)
+        def hit_boundary(self, board, constraint):
+            if constraint.direction == HORIZONTAL and self.curr_col < constraint.boundary:
+                return True 
+            if constraint.direction == VERTICAL and self.curr_row < constraint.boundary:
+                return True
+            if self.curr_col >= board.MAX_COL:
+                return True 
+            if self.curr_row >= board.MAX_ROW:
+                return True 
+            return False 
+            
+    class Constraint:
+        def __init__(self, hook_row, hook_col, direction, boundary):
+            self.hook_row = hook_row 
+            self.hook_col = hook_col 
+            self.direction = direction 
+            self.boundary = boundary 
+        
     def attempt_computer_move(self, player, board):        
         self.generate_all_possible_moves(player.rack, board)
         if self.comp_max_word:
@@ -410,39 +445,34 @@ class Move:
         return (self.comp_max_score, self.comp_max_word)
 
     def generate_all_possible_moves(self, rack, board):
-        # iterate over all  possible hook spots, building up words going both HORIZONTALLY and VERTICALLY 
+        # iterate over all possible hook spots, building up words going both HORIZONTALLY and VERTICALLY 
         # maintain pointer to the previous hook spot so that we do not recalculate possible words for that spot--when moving back from the current spot 
-        prev_hook_spot = MIN_COL
+        boundary = MIN_COL
         for (hook_row, hook_col) in valid_hook_spots:
-            self.generate_moves_for_hook_spot(None, rack, [], 0, hook_row, hook_col, HORIZONTAL, prev_hook_spot)
-            prev_hook_spot = hook_col + 1
+            constraint = Constraint(hook_row, hook_col, HORIZONTAL, boundary)
+            context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
+            
+            self.generate_moves_for_hook_spot(board, context, constraint)
+            boundary = hook_col + 1
        
-        prev_hook_spot = MIN_ROW
+        boundary = MIN_ROW
         for (hook_row, hook_col) in valid_hook_spots:
-            self.generate_moves_for_hook_spot(None, rack, [], 0, hook_row, hook_col, VERTICAL, prev_hook_spot)
-            prev_hook_spot = hook_row + 1
-
-    // search_context = helps build word, constraint = helps search the gaddag, never changes            
-    def generate_moves_for_hook_spot(self, board, curr_rack, curr_word, curr_node, curr_offset, hook_row, hook_col, direction, boundary):        
-        if direction == HORIZONTAL:
-            (curr_row, curr_col) = (hook_row, hook_col + curr_offset)
-        else:
-            (curr_row, curr_col) = (hook_row + curr_offset, hook_col)
-
-        #stop placing if we've reached the previous hook spot (or if we pass the max boundary of the board)
-        if (direction == HORIZONTAL and curr_col < boundary) or \
-           (direction == VERTICAL and curr_row < boundary) or \
-           (curr_col >= MAX_COL) or (curr_row >= MAX_ROW):
+            constraint = Constraint(hook_row, hook_col, VERTICAL, boundary)
+            context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
+            
+            self.generate_moves_for_hook_spot(board, context, constraint)
+            boundary = hook_row + 1
+         
+    def generate_moves_for_hook_spot(self, board, context, constraint):  
+        if context.hit_boundary(constraint):
             return
         
         #if there is already a tile here, try to place this as the next move
-        if self.has_scrabble_tile(curr_row, curr_col):
-            letter = self.board[curr_row][curr_col]
-            self.concatenate_next(letter, curr_node, curr_rack, curr_word,
-                       curr_offset, hook_row, hook_col, direction, boundary)
+        if board.has_tile(context.location):     
+            self.concatenate_next(board, context.accept_letter(board.get_tile(context.location)), constraint)
 
-        #otheriwse, if we still have tiles left, try to place
-        elif curr_rack:
+        #otherwise, if we still have tiles left, try to place
+        elif context.has_tiles_left_on_rack():
             #iterate over the set of valid crossletters
             if (curr_row, curr_col) in valid_crossword_score_dict.keys():
                 for letter in valid_crossword_score_dict[(curr_row, curr_col)].keys():
@@ -455,10 +485,8 @@ class Move:
         
     #REFACTOR CORE RECURSIVE CALL -- keep building up the string 
     #tries to concatenate the input letter onto the prefix or suffix of the word    
-    def process_letter_in_gaddag(self, letter, curr_node = SCRABBLE_APPRENTICE_GADDAG.start_node, curr_rack, curr_word,
+    def process_letter_in_gaddag(self, letter, curr_node = , curr_rack, curr_word,
                        curr_offset, hook_row, hook_col, direction, boundary):
-        if curr_node is None:
-            curr_node = 
         #if we've reached an ending node, save this word (for both prefix and suffix b/c the prefix could be the WHOLE word)
         if letter in curr_node.eow_set:
             if curr_offset <= 0:
