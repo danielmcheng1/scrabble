@@ -1,4 +1,3 @@
-import location 
 
 class Board:
     TRIPLE_LETTER = 'Triple Letter'
@@ -6,7 +5,6 @@ class Board:
     DOUBLE_LETTER = 'Double Letter'
     DOUBLE_WORD = 'Double WOrd'
     NO_BONUS = ''    
-    BINGO_BONUS = 50
     (MIN_ROW, MAX_ROW) = (0, 15)
     (MIN_COL, MAX_COL) = (0, 15)
     (CENTER_ROW, CENTER_COL) = (7, 7)
@@ -36,8 +34,6 @@ class Board:
         if self.get_bonus == DOUBLE_LETTER:
             return 2
         return 1
-    def get_bonus_bingo(self):
-        return BINGO_BONUS 
         
     def get_bonus(self, row, col):
         if not (row % 7) and not (col % 7) and not (row == 7 and col == 7):
