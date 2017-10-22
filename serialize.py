@@ -124,7 +124,7 @@ def log_illegal_move(last_move_to_send, e):
     last_move_to_send["player"] = "Human"
     last_move_to_send["action"] = "Made Illegal Move" 
     last_move_to_send["detail"] = "".join(e.args)
-    
+  '''moved into board  
 def map_cell_to_bonus_view(cell):
     if cell == TRIPLE_LETTER:
         return 'Triple Letter'
@@ -139,9 +139,9 @@ def map_cell_to_bonus_view(cell):
     #TBD have to see if bonusess get replaced by letters 
     #print('WARNING: returning blank for {0}'.format(cell))
     return ''
-    
+    '''
 def map_cell_to_tile_view(cell, player_type, scrabble_score_dict):
-    #TBD flip to the is_scrabble_tile method? 
+    #TBD flip to the has_scrabble_tile method? 
     #TBD player type vs. player vs. player name
     #cell is actually a tile...
     if cell.isalpha():

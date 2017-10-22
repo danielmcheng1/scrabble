@@ -48,7 +48,6 @@ class Move:
             self.attempt_pass()
         
     def attempt_place_tiles(self, sorted_tiles, board):
-    
         try:
             self.validate_nonzero_tiles(sorted_tiles)
             self.validate_in_one_row_or_column(sorted_tiles)
@@ -63,26 +62,26 @@ class Move:
         # pull the whole word from existing board tiles + tiles placed by player 
         current_location = start_location
         tile_index = 0 
-        word =  [] 
+        word = [] 
         while True:
             # existing board tile 
             if board.has_tile(location):
-                word.append(board.get_tile(location).letter) # REFACTOR: get methods?   
+                word.append(board.get_tile(location)) 
             # we've used all the tiles placed by the player 
             elif tile_index == num_tiles:
                 break  
             # player did not place anything here 
             elif sorted_tiles[tile_index].location != location:
-                raise ValueError("All tiles must be connected to each other") 
+                self.log_error("Placed tiles must be connected to each other") 
+                return 
             # player placed a tile here 
             else:
-                letter = sorted_tiles[tile_index].letter
                 try:
-                    self.validate_valid_crossword_formed(location, direction, letter)
+                    self.validate_valid_crossword_formed(location, direction, sorted_tiles[tile_index].letter)
                 except as e:
                     self.log_error(e)
                     return 
-                word.append(letter) 
+                word.append(sorted_tiles[tile_index]) 
                 tile_index += 1
                 
             # now increment to the next spot 
@@ -91,16 +90,15 @@ class Move:
             else 
                 current_location = current_location.offset(0, -1)
         
-        # validate the full word 
+        # validate the full word now that we've walked down  the board 
         try:
-            self.validate_word_in_dictionary(word)
+            self.validate_tileword_in_dictionary(word)
         except as e:
             self.log_error(e)
         
         self.log_success(PLACE_TILES)
         
         
-                        
         #score and place word
         human_score = self.calc_word_score(start_row, start_col, direction, word, valid_crossword_score_dict)
         return human_score
@@ -219,26 +217,39 @@ class Move:
         
     #################        
     #http://www.csc.kth.se/utbildning/kth/kurser/DD143X/dkand12/Group3Johan/report/berntsson_ericsson_report.pdf example scoring
-    #calculate score--compute score for a given word off of the "real" board to calculate bonsues
-        #hence this does not affect the shadow board, nor does it touch the real board aside from pulling bonuses
-        #this allows us to abstract out the calc score function for computing both crosswords and regular words,
-        #and allows ut to correctly compute bonuses for overlapping crosswords and regular words
-    #valid_crossword_score_dict is a cache of the crossword scores for that spot
-        #if it is empty, then there are no crosswords to compute
-        #hence, when pull_valid_crossword_score calls this function, it passes an empty dictionary
-    #we ask for the word and calculate scores based on this (instead of walking over the board) 
-        #because this allows us to remember bonuses (ehhh not really...you could always undo)                           
-    def calc_word_score(self, start_row, start_col, direction, word, valid_crossword_score_dict):
-        
-        num_tiles = len(word) #to set boundaries
-        num_tiles_used = 0 #to keep track of bingo score
+    def calc_word_score(self, start_location, direction, word, board):
+        num_tiles_placed = 0 #to keep track of bingo score
                                
         crossword_scores = 0 #to keep track of ALL crossword scores
         total_score = 0 #running total score
         word_multiplier = 1 #overall word multiplier
-        letter_multiplier = 1 #individual tile multipliers
-        
+
+        for i in range(0, len(word)):
+            if direction == HORIZONTAL:
+                location = start_location.offset(i, 0)
+            else 
+                location = start_location.offset(0, i)
+                
+            #if we aren't overlapping an existing tile, then increment the tile count
+            if board.has_tile(location):
+                letter_multiplier = board.get_bonus_letter_multiplier(location.get_row(), location.get_col())
+                word_multiplier *= board.get_bonus_word_multiplier(location.get_row(), location.get_col())
+            else:
+                letter_multiplier = board.get_bonus_letter_multiplier(location.get_row(), location.get_col())
+                word_multiplier *= board.get_bonus_word_multiplier(location.get_row(), location.get_col())
+                num_tiles_placed += 1
+                       
+        total_score += letter_multiplier * self.scrabble_score_dict[curr_letter]
+        letter_multiplier = 1
+
+        #add in crossword score
+        if valid_crossword_score_dict:
+            if (curr_row, curr_col) in valid_crossword_score_dict.keys():
+                #this letter should always exist as a key since we precalculated all crossword combinations
+                crossword_scores += valid_crossword_score_dict[(curr_row, curr_col)][curr_letter]                  
+                
         #set boundaries
+        (start_row, start_col) = start_location.get_tuple() 
         if direction == HORIZONTAL:
             end_row = start_row + 1
             end_col = start_col + num_tiles
@@ -250,7 +261,7 @@ class Move:
         for curr_row in range(start_row, end_row):
             for curr_col in range(start_col, end_col):
                 #if we aren't overlapping an existing tile, then increment the tile count
-                if not self.has_scrabble_tile(curr_row, curr_col):
+                if not board.has_scrabble_tile(curr_row, curr_col):
                     num_tiles_used = num_tiles_used + 1
                 
                 #calculate score and bonus for this letter
@@ -276,16 +287,6 @@ class Move:
                     if (curr_row, curr_col) in valid_crossword_score_dict.keys():
                         #this letter should always exist as a key since we precalculated all crossword combinations
                         crossword_scores += valid_crossword_score_dict[(curr_row, curr_col)][curr_letter]                  
-                #http://blog.lerner.co.il/calculating-scrabble-scores-reduce/ 
-                #reduce(lambda total, current: total + points[current], word, 0)
-                
-                #TBD printing for debugging
-                if valid_crossword_score_dict and DEBUG_PULL_VALID_CROSSWORD:
-                    print(str(curr_letter) + ": " + str(self.scrabble_score_dict[curr_letter]) + "pts" + \
-                      " --> bonus : " + str(curr_bonus) + " pts at " + str(curr_row) + "," + str(curr_col))                                  
-                elif DEBUG_PULL_VALID_CROSSWORD:
-                    print("\t" + str(curr_letter) + ": " + str(self.scrabble_score_dict[curr_letter]) + "pts" + \
-                      " --> bonus : " + str(curr_bonus) + " pts at " + str(curr_row) + "," + str(curr_col))                                  
                 
         #final word multiplier bonus
         total_score *= word_multiplier
@@ -509,9 +510,13 @@ class Move:
         last_move_to_send["action"] = "Made Illegal Move" 
         last_move_to_send["detail"] = "".join(e.args)
 
+    def validate_tileword_in_dictionary(self, tiles):
+        self.validate_word_in_dictionary([tile.letter for tile in word])
+        
     def validate_word_in_dictionary(self, word):
-        if "".join(word) not in self.scrabble_corpus:
-            raise ValueError("{0} is not a valid word in the TWL06 Scrabble dictionary".format("".join(word)))
+        letter_representation = "".join(word)
+        if letter_representation not in self.scrabble_corpus:
+            raise ValueError("{0} is not a valid word in the TWL06 Scrabble dictionary".format(letter_representation))
         
     def validate_nonzero_tiles(self, sorted_tiles):
         if len(sorted_tiles) == 0:

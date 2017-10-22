@@ -1,10 +1,11 @@
+import location 
 
 class Board:
-    TRIPLE_LETTER = '3L'
-    TRIPLE_WORD = '3W'
-    DOUBLE_LETTER = '2L'
-    DOUBLE_WORD = '2W'
-    NO_BONUS = '  '
+    TRIPLE_LETTER = 'Triple Letter'
+    TRIPLE_WORD = 'Triple Word'
+    DOUBLE_LETTER = 'Double Letter'
+    DOUBLE_WORD = 'Double WOrd'
+    NO_BONUS = ''    
     BINGO_BONUS = 50
     (MIN_ROW, MAX_ROW) = (0, 15)
     (MIN_COL, MAX_COL) = (0, 15)
@@ -15,14 +16,30 @@ class Board:
 
     #highest for loop appears first!! http://rhodesmill.org/brandon/2009/nested-comprehensions/
     def __init__(self, bag, score_dict, corpus):
-        self.board = [[self.add_premium(row, col) for col in range(MIN_COL, MAX_COL)] for row in range(MIN_ROW, MAX_ROW)]
+        self.board = [[self.get_bonus(row, col) for col in range(MIN_COL, MAX_COL)] for row in range(MIN_ROW, MAX_ROW)]
         self.board_to_player = [["" for col in range(MIN_COL, MAX_COL)] for row in range(MIN_ROW, MAX_ROW)]
         self.num_words_placed = 0
         self.bag = bag
         self.scrabble_score_dict = score_dict
         self.scrabble_corpus = corpus
+    
+    def get_bonus_word_multiplier(self, row, col):
+        if self.get_bonus == TRIPLE_WORD:
+            return 3
+        if self.get_bonus == DOUBLE_WORD:
+            return 2
+        return 1
+    
+    def get_bonus_letter_multiplier(self, row, col);
+        if self.get_bonus == TRIPLE_LETTER:
+            return 3
+        if self.get_bonus == DOUBLE_LETTER:
+            return 2
+        return 1
+    def get_bonus_bingo(self):
+        return BINGO_BONUS 
         
-    def add_premium(self, row, col):
+    def get_bonus(self, row, col):
         if not (row % 7) and not (col % 7) and not (row == 7 and col == 7):
             return TRIPLE_WORD
         elif row + col == 14 or row == col:
