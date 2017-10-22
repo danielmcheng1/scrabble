@@ -8,6 +8,7 @@ SCRABBLE_MIN_WORD_LENGTH = corpus.get_min_word_length()
 SCRABBLE_CORPUS  = corpus.load_scrabble_corpus()
 
 class GameController:
+    MAX_TURNS_PASSED = 6
     def __init__(self):
         self.board = board
         self.current_player = scrabble_player_1

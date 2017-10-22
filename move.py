@@ -7,6 +7,7 @@ class Move:
     PASS = "Pass"
     HORIZONTAL = 1
     VERTICAL = -1
+    RACK_MAX_NUM_TILES = 7
     
     def __init__(self, board, bag, player, attempted_tiles = None, move_type = None):
         self.all_hook_spots = self.pull_all_hook_spots(board)
@@ -47,69 +48,15 @@ class Move:
             self.attempt_pass()
         
     def attempt_place_tiles(self, sorted_tiles, board):
-        word_info = map_tiles_to_word_on_board(sorted_tiles, board)
-        return {"start_location": start_location, "direction": direction, "word": word}
-        
-        num_tiles = len(word)
-        if direction == HORIZONTAL:
-            end_row = start_row + 1
-            end_col = start_col + num_tiles
-            cross_direction_description = "vertically"
-        else:
-            end_row = start_row + num_tiles
-            end_col = start_col + 1
-            cross_direction_description = "horizontally"
-
-        #validity checks
-        if self.is_valid_word(word):
-            #exception for first move
-            if self.num_words_placed == 0:
-                if not self.intersect_center_tile(start_row, start_col, direction, word):
-                    raise ValueError("The first move on the board must cross the center tile")
-            #all other moves
-            else:
-                hooks_onto_tile = False
-                for curr_row in range(start_row, end_row):
-                    for curr_col in range(start_col, end_col):
-                        to_place = word[curr_row - start_row + curr_col - start_col] #the extra blank padding only appears when printing
-                        if self.has_scrabble_tile(curr_row, curr_col):
-                            if self.board[curr_row][curr_col] != to_place:
-                                raise ValueError('Your tile {0} overlaps existing tiles on the board (perhaps from a concurrent session?)'.format(to_place))
-                            else:
-                                hooks_onto_tile = True
-                        else:
-                            if (curr_row, curr_col) not in valid_crossword_score_dict.keys():
-                                raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(to_place, cross_direction_description))
-                            elif to_place not in valid_crossword_score_dict[(curr_row, curr_col)].keys():
-                                raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(to_place, cross_direction_description))
-                            if (curr_row, curr_col) in valid_hook_spots:
-                                hooks_onto_tile = True
-                #check if we connected to a tile at some point in the word
-                if not hooks_onto_tile:
-                    raise ValueError("Your tiles must be placed adjacent to at least one tile on the board")
-        else:
-            raise ValueError("{0} is not a valid word in the TWL06 Scrabble dictionary".format("".join(word)))
-                        
-        #score and place word
-        human_score = self.calc_word_score(start_row, start_col, direction, word, valid_crossword_score_dict)
-        return human_score
-        
-    # REFACTOR errors? at least not value error....
-    # given list of tiles placed by player, calculate the full word formed (since this will include tiles already on the board)
-    def map_tiles_to_word_on_board(self, sorted_tiles, board):
-        
+    
         try:
             self.validate_nonzero_tiles(sorted_tiles)
+            self.validate_in_one_row_or_column(sorted_tiles)
+            self.validate_tiles_hook_onto_existing(sorted_tiles)
         except as e:
             self.log_error(e)
             return 
             
-        try:
-            self.validate_in_one_row_or_column(sorted_tiles)
-        except as e:
-            self.log_error(e) 
-            return     
-        
         direction = self.get_direction(sorted_tiles) 
         start_location = find_start_of_word(sorted_tiles[0].location, direction, board)
         
@@ -129,7 +76,13 @@ class Move:
                 raise ValueError("All tiles must be connected to each other") 
             # player placed a tile here 
             else:
-                word.append(sorted_tiles[tile_index].letter) 
+                letter = sorted_tiles[tile_index].letter
+                try:
+                    self.validate_valid_crossword_formed(location, direction, letter)
+                except as e:
+                    self.log_error(e)
+                    return 
+                word.append(letter) 
                 tile_index += 1
                 
             # now increment to the next spot 
@@ -137,15 +90,23 @@ class Move:
                 current_location = current_location.offset(-1, 0)
             else 
                 current_location = current_location.offset(0, -1)
-        if (curr_row, curr_col) not in valid_crossword_score_dict.keys():
-            raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(to_place, cross_direction_description))
-        elif to_place not in valid_crossword_score_dict[(curr_row, curr_col)].keys():
-            raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(to_place, cross_direction_description))
-        if (curr_row, curr_col) in valid_hook_spots:
-            hooks_onto_tile = True
-
-        return {"start_location": start_location, "direction": direction, "word": word}
         
+        # validate the full word 
+        try:
+            self.validate_word_in_dictionary(word)
+        except as e:
+            self.log_error(e)
+        
+        self.log_success(PLACE_TILES)
+        
+        
+                        
+        #score and place word
+        human_score = self.calc_word_score(start_row, start_col, direction, word, valid_crossword_score_dict)
+        return human_score
+        
+    # REFACTOR errors? at least not value error....
+      
     def find_used_rows_and_cols(self, tiles):
         rows = set([])
         cols = set([])
@@ -526,28 +487,9 @@ class Move:
  
     #####
     ### UTILITY METHODS 
-    def is_valid_word(self, tiles):
-        return "".join([tile.letter for tile in tiles]) in self.scrabble_corpus 
-        
     def sort_tiles(self, tiles):
         return sorted(tiles, key = lambda tile: (tile.location.get_row(), tile.location.get_col()))
     
-    #####
-    ### VALIDATION 
-    def log_error(e):
-        last_move_to_send["player"] = "Human"
-        last_move_to_send["action"] = "Made Illegal Move" 
-        last_move_to_send["detail"] = "".join(e.args)
-        
-    def validate_nonzero_tiles(self, sorted_tiles):
-        if len(sorted_tiles) == 0:
-            raise ValueError("You must place at least one tile. If you cannot move, exchange tiles or simply pass")
-        
-    def validate_in_one_row_or_column(self, sorted_tiles):
-        (used_rows, used_cols) = self.find_used_rows_and_cols(sorted_tiles)
-        if len(used_rows) != 1 and len(used_cols) != 1:
-            raise ValueError("You can only place in one row or column")    
-        
     def get_direction(self, sorted_tiles):
         (used_rows, used_cols) = self.find_used_rows_and_cols(sorted_tiles)
         if len(filled_rows) == 1:
@@ -560,21 +502,56 @@ class Move:
             direction = VERTICAL 
         return direction 
         
+    #####
+    ### VALIDATION 
+    def log_error(e):
+        last_move_to_send["player"] = "Human"
+        last_move_to_send["action"] = "Made Illegal Move" 
+        last_move_to_send["detail"] = "".join(e.args)
+
+    def validate_word_in_dictionary(self, word):
+        if "".join(word) not in self.scrabble_corpus:
+            raise ValueError("{0} is not a valid word in the TWL06 Scrabble dictionary".format("".join(word)))
         
+    def validate_nonzero_tiles(self, sorted_tiles):
+        if len(sorted_tiles) == 0:
+            raise ValueError("You must place at least one tile. If you cannot move, exchange tiles or simply pass")
+        
+    def validate_in_one_row_or_column(self, sorted_tiles):
+        (used_rows, used_cols) = self.find_used_rows_and_cols(sorted_tiles)
+        if len(used_rows) != 1 and len(used_cols) != 1:
+            raise ValueError("You can only place in one row or column")    
+        
+    def validate_tiles_hook_onto_existing(self, sorted_tiles):
+        intersection = set(self.all_hook_spots).intersection([tile.location.tuple() for tile in sorted_tiles])
+        if len(intersection) == 0:
+            raise ValueError("Your placed tiles must hook onto an existing tile on the board")
+            
+    def validate_valid_crossword_formed(self, location, direction, letter):
+        if direction == HORIZONTAL:
+            cross_direction_description == "vertically"
+        else:
+            cross_direction_description == "horizontally"
+        (row, col) = location.get_tuple()
+        if (row, col) not in all_crossword_scores.keys():
+            raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(letter, cross_direction_description))
+        if letter not in valid_crossword_score_dict[(row, col)].keys():
+            raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(letter, cross_direction_description))
+     
     #####
     ### HOOKS AND CROSSWORD GENERATION 
-    #hook spots: list of Locations where a new word could be placed
+    #hook spots: list of (row, col) where a new word could be placed
     def pull_all_hook_spots(self, board):
         valid_hook_spots = []
         for row in range(board.MIN_ROW, board.MAX_ROW):
             for col in range(board.MIN_COL, board.MAX_COL):
                 if self.is_valid_hook_spot:
-                    valid_hook_spots.append(new location.Location(row, col))
+                    valid_hook_spots.append((row, col))
                     
         return valid_hook_spots
     
     #crossword score dicts (one for horizontal, one for vertical): 
-        # keys = Location
+        # keys = (row, col)
         # values = dictionary of letters 
             # keys = valid letter for that location 
             # values = score for that crossword  
@@ -583,14 +560,16 @@ class Move:
         crossword_scores_for_vertical = {}
         for row in range(board.MIN_ROW, board.MAX_ROW):
             for col in range(board.MIN_COL, board.MAX_COL):
-                crossword_scores_for_horizontal[location.Location(row, col)] = pull_crossword_scores_at_location(row, col, HORIZONTAL, rack) 
-                crossword_scores_for_vertical[location.Location(row, col)] = pull_crossword_scores_at_location(row, col, VERTICAL, rack) 
+                crossword_scores_for_horizontal[(row, col)] = pull_crossword_scores_at_location(row, col, HORIZONTAL, rack) 
+                crossword_scores_for_vertical[(row, col)] = pull_crossword_scores_at_location(row, col, VERTICAL, rack) 
         return (crossword_scores_for_horizontal, crossword_scores_for_vertical) 
 
      def is_valid_hook_spot(self, board, location):
         (row, col) = location.get_tuple()
         if board.num_words_placed == 0:
-            if row <= board.CENTER_ROW and col <= board.CENTER_COL:
+            if row <= board.CENTER_ROW and row > board.CENTER_ROW - RACK_MAX_NUM_TILES:
+                return True 
+            elif col <= board.CENTER_COL and col > board.CENTER_COL - RACK_MAX_NUM_TILES:
                 return True 
             else:
                 return False 

@@ -1,16 +1,13 @@
 
 class Board:
-    WILDCARD = ' ' #this are the two blank Scrabble tiles
     TRIPLE_LETTER = '3L'
     TRIPLE_WORD = '3W'
     DOUBLE_LETTER = '2L'
     DOUBLE_WORD = '2W'
     NO_BONUS = '  '
     BINGO_BONUS = 50
-    RACK_MAX_NUM_TILES = 7
     (MIN_ROW, MAX_ROW) = (0, 15)
     (MIN_COL, MAX_COL) = (0, 15)
-    MAX_TURNS_PASSED = 6
     (CENTER_ROW, CENTER_COL) = (7, 7)
 
     FRONT_END = 1 #for checking if the spot before the first tile is filled
