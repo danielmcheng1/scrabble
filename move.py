@@ -130,94 +130,6 @@ class Move:
                 start_location = start_location.offset(0, -1)
         return start_location
     
-        
-        
-    #################
-    def attempt_computer_move(self, player):        
-        self.generate_all_possible_moves(player.rack)
-        if self.comp_max_word:
-            self.place_word(self.comp_max_row, self.comp_max_col, self.comp_max_direction, self.comp_max_word, player)
-        return (self.comp_max_score, self.comp_max_word)
-
-    def generate_all_possible_moves(self, rack):
-               
-        for row in range(MIN_ROW, MAX_ROW):
-            valid_hook_spots = self.pull_hooks(start_row, start_col, direction, player.rack)
-            valid_crossword_score_dict = self.pull_crosswords(start_row, start_col, direction, player.rack)
-                
-            prev_hook_spot = MIN_COL
-            for (hook_row, hook_col) in valid_hook_spots:
-                if DEBUG_ALL_MOVES:
-                    print("Generating moves for this hook spot: " + str((hook_row, hook_col)))
-                self.generate_moves_for_hook_spot(None, rack, [], 0, hook_row, hook_col, \
-                                                  HORIZONTAL, prev_hook_spot, valid_crossword_score_dict, "")
-                prev_hook_spot = hook_col + 1
-            if DEBUG_ALL_MOVES:
-                print("\nAll possible moves to play for row: " + str(row))
-                print(str(board.comp_all_possible_moves[HORIZONTAL]))
-        
-
-
-        for col in range(MIN_COL, MAX_COL):
-            valid_hook_spots = self.pull_hooks(start_row, start_col, direction, player.rack)
-            valid_crossword_score_dict = self.pull_crosswords(start_row, start_col, direction, player.rack)    
-            prev_hook_spot = MIN_ROW
-            for (hook_row, hook_col) in valid_hook_spots:
-                if DEBUG_ALL_MOVES:
-                    print("Generating moves for this hook spot: " + str((hook_row, hook_col)))
-                self.generate_moves_for_hook_spot(None, rack, [], 0, hook_row, hook_col, \
-                                                  VERTICAL, prev_hook_spot, valid_crossword_score_dict, "")
-                prev_hook_spot = hook_row + 1
-            if DEBUG_ALL_MOVES:
-                print("\nAll possible moves to play for col: " + str(col))
-                print(str(board.comp_all_possible_moves[VERTICAL]))
-
-                
-    def generate_moves_for_hook_spot(self, curr_node, curr_rack, curr_word, 
-                       curr_offset, hook_row, hook_col, direction, boundary,
-                       valid_crossword_score_dict, indent):        
-        if direction == HORIZONTAL:
-            (curr_row, curr_col) = (hook_row, hook_col + curr_offset)
-        else:
-            (curr_row, curr_col) = (hook_row + curr_offset, hook_col)
-
-        if DEBUG_GENERATE_MOVES:
-            print(indent + "Entering generate moves at: " + str((curr_row, curr_col)) + \
-                  " with word " + str(curr_word) + " in current rack: " + str(curr_rack))
-        #stop placing if we've reached the previous hook spot (or if we pass the max boundary of the board)
-        if (direction == HORIZONTAL and curr_col < boundary) or \
-           (direction == VERTICAL and curr_row < boundary) or \
-           (curr_col >= MAX_COL) or (curr_row >= MAX_ROW):
-            if DEBUG_GENERATE_MOVES:
-                print (indent + GEN_MOVES_PRINT_INDENT + "reached a boundary")
-            return
-        
-        #if there is already a tile here, try to place this as the next move
-        if self.has_scrabble_tile(curr_row, curr_col):
-            letter = self.board[curr_row][curr_col]
-            if curr_node is None:
-                curr_node = SCRABBLE_APPRENTICE_GADDAG.start_node
-            self.concatenate_next(letter, curr_node, curr_rack, curr_word,
-                       curr_offset, hook_row, hook_col, direction, boundary,
-                       valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT + GEN_MOVES_PRINT_INDENT)
-
-        #otheriwse, if we still have tiles left, try to place
-        elif curr_rack:
-            #iterate over the set of valid crossletters
-            if (curr_row, curr_col) in valid_crossword_score_dict.keys():
-                for letter in valid_crossword_score_dict[(curr_row, curr_col)].keys():
-                    if letter in curr_rack:
-                        new_rack = curr_rack[:]
-                        new_rack.remove(letter)
-                        if DEBUG_GENERATE_MOVES:
-                            print(indent + GEN_MOVES_PRINT_INDENT + "found letter " + letter + "--new rack is " + str(new_rack))
-                        if curr_node is None:
-                            curr_node = SCRABBLE_APPRENTICE_GADDAG.start_node
-                        self.concatenate_next(letter, curr_node, new_rack, curr_word,
-                                   curr_offset, hook_row, hook_col, direction, boundary,
-                                   valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT + GEN_MOVES_PRINT_INDENT)
-        
-        
     #################        
     # calculate Scrabble score for a word (represented as a list of TILE objects)
     def calc_word_score(self, tile_word, board):
@@ -258,130 +170,8 @@ class Move:
         if num_tiles_placed == RACK_MAX_NUM_TILES:
             total_score += BINGO_BONUS
             
-        return total_score
+        return total_score        
 
-
-    #this is called once we hit the end of a word     
-    def computer_save_word_and_score(self, curr_offset, hook_row, hook_col, direction, word, valid_crossword_score_dict):
-        (start_row, start_col, end_row, end_col) = self.find_coordinate_bounds_of_word(curr_offset, hook_row, hook_col, direction, word)
-        word_score = self.calc_word_score(start_row, start_col, direction, word, valid_crossword_score_dict)
-        #exception for the first move
-        if self.num_words_placed == 0 and not self.intersect_center_tile(start_row, start_col, direction, word):
-            return
-        
-            
-        cleaned_word = ''.join(word) #make this a string for ease of reading--this dictionary isn't used for anything aside from debugging
-        if (start_row, start_col) in self.comp_all_possible_moves[direction].keys():
-            if cleaned_word in self.comp_all_possible_moves[direction][(start_row, start_col)].keys():
-                raise ValueError("Resaving a word that was previously computer calculated with a different score")
-            self.comp_all_possible_moves[direction][(start_row, start_col)][cleaned_word] = word_score
-        else:
-            self.comp_all_possible_moves[direction][(start_row, start_col)] = {}
-            self.comp_all_possible_moves[direction][(start_row, start_col)][cleaned_word] = word_score
-            
-        if word_score > self.comp_max_score:
-            self.comp_max_score = word_score
-            self.comp_max_word = word #save this as a list since this is the standard type throughout
-            self.comp_max_row = start_row
-            self.comp_max_col = start_col
-            self.comp_max_direction = direction
-
-            
-                    
-        
-    #####
-    def find_coordinate_bounds_of_word(self, curr_offset, hook_row, hook_col, direction, word):
-        if direction == HORIZONTAL:
-            #either we were offset to the beginning of the word (i.e. we hit eow on a reversed prefix)
-            if curr_offset <= 0:
-                (start_row, start_col) = (hook_row, hook_col + curr_offset)
-            #or we were offset to the end of the word
-            else:
-                (start_row, start_col) = (hook_row, hook_col + curr_offset - len(word) + 1)
-            (end_row, end_col) = (start_row, start_col + len(word) - 1)
-        else:
-            if curr_offset <= 0:
-                (start_row, start_col) = (hook_row + curr_offset, hook_col)
-            else:
-                (start_row, start_col) = (hook_row + curr_offset - len(word) + 1, hook_col)
-            (end_row, end_col) = (start_row + len(word) - 1, start_col)
-        return (start_row, start_col, end_row, end_col)
-       
-    #checks that if we continue to concatenate, 
-        #that there is NOT a tile to the left (above) or to the right (below) of this eow
-    def ends_are_filled(self, curr_offset, hook_row, hook_col, direction, word, front_or_back):
-        (start_row, start_col, end_row, end_col) = \
-            self.find_coordinate_bounds_of_word(curr_offset, hook_row, hook_col, direction, word)
-        #print(word)
-        #print(str((start_row, start_col, end_row, end_col)))
-        if direction == HORIZONTAL:
-            (front_row, front_col) = (start_row, start_col - 1)
-            (back_row, back_col) = (end_row, end_col + 1)
-        else:
-            (front_row, front_col) = (start_row - 1, start_col)
-            (back_row, back_col) = (end_row + 1, end_col)
-        if front_or_back == FRONT_END:
-            return self.has_scrabble_tile(front_row, front_col)
-        elif front_or_back == FRONT_OR_BACK_END:
-            return self.has_scrabble_tile(front_row, front_col) or self.has_scrabble_tile(back_row, back_col)
-        else:
-            raise ValueError("Requested something besides FRONT_END or FRONT_OR_BACK_END")
-    #REFACTOR CORE RECURSIVE CALL -- keep building up the string 
-    #tries to concatenate the input letter onto the prefix or suffix of the word    
-    def concatenate_next(self, letter, curr_node, curr_rack, curr_word,
-                       curr_offset, hook_row, hook_col, direction, boundary,
-                       valid_crossword_score_dict, indent):
-        #if we've reached an ending node, save this word (for both prefix and suffix b/c the prefix could be the WHOLE word)
-        if letter in curr_node.eow_set:
-            if curr_offset <= 0:
-                completed_word = [letter] + curr_word
-            else:
-                completed_word = curr_word + [letter]
-            if not self.ends_are_filled(curr_offset, hook_row, hook_col, direction, completed_word, FRONT_OR_BACK_END):
-                if DEBUG_GENERATE_MOVES:
-                    print(indent + "reached an eow: " + str(completed_word))
-                self.computer_save_word_and_score(curr_offset, hook_row, hook_col, direction, completed_word, 
-                                           valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT) 
-        #placing prefix
-        if curr_offset <= 0:
-            if letter in curr_node.edges.keys():
-                curr_node = curr_node.edges[letter]
-                new_word = [letter] + curr_word
-                if DEBUG_GENERATE_MOVES:
-                    print(indent + "building up prefix: " + str(new_word) + " with rack " + str(curr_rack))
-                self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
-                                    curr_offset - 1, hook_row, hook_col, direction, boundary,
-                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
-                #if the next node leads to a hook, then we have to reverse 
-                #(unless we're bumping up against another tile on the board)
-                if scrabble_apprentice_gaddag.GADDAG_HOOK in curr_node.edges.keys() and \
-                not self.ends_are_filled(curr_offset, hook_row, hook_col, direction, new_word, FRONT_END):
-                    curr_node = curr_node.edges[scrabble_apprentice_gaddag.GADDAG_HOOK]
-                    if DEBUG_GENERATE_MOVES:
-                        print(indent + "found a hook-->reversing now with: " + str(new_word) + " with rack " + str(curr_rack))
-                    self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
-                                    1, hook_row, hook_col, direction, boundary,
-                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
-            elif DEBUG_GENERATE_MOVES:
-                print (indent + "unable to continue building prefix")
-        #placing suffix
-        else:      
-            if letter in curr_node.edges.keys():
-                curr_node = curr_node.edges[letter]
-                new_word = curr_word + [letter]
-                
-                if DEBUG_GENERATE_MOVES:
-                    print(indent + "building up suffix: " + str(new_word))
-                self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
-                                    curr_offset + 1, hook_row, hook_col, direction, boundary,
-                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
-            elif DEBUG_GENERATE_MOVES:
-                print (indent + "unable to continue building suffix")
-                
-                
-               
-            
-            
         
     #####
     def draw_tiles_end_of_turn(self, player, num_tiles):
@@ -501,7 +291,7 @@ class Move:
             raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(letter, cross_direction_description))
      
     #####
-    ### HOOKS AND CROSSWORD GENERATION 
+    ### HOOK SPOT GENERATION
     #hook spots: list of (row, col) where a new word could be placed
     def pull_all_hook_spots(self, board):
         valid_hook_spots = []
@@ -512,20 +302,6 @@ class Move:
                     
         return valid_hook_spots
     
-    #crossword score dicts (one for horizontal, one for vertical): 
-        # keys = (row, col)
-        # values = dictionary of letters 
-            # keys = valid letter for that location 
-            # values = score for that crossword  
-    def pull_all_crossword_scores(self, board, rack):
-        crossword_scores_for_horizontal = {}
-        crossword_scores_for_vertical = {}
-        for row in range(board.MIN_ROW, board.MAX_ROW):
-            for col in range(board.MIN_COL, board.MAX_COL):
-                crossword_scores_for_horizontal[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), HORIZONTAL, rack) 
-                crossword_scores_for_vertical[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), VERTICAL, rack) 
-        return {HORIZONTAL: crossword_scores_for_horizontal, VERTICAL: crossword_scores_for_vertical)}
-
      def is_valid_hook_spot(self, board, location):
         (row, col) = location.get_tuple()
         if board.num_words_placed == 0:
@@ -548,7 +324,21 @@ class Move:
                 else:
                     return False 
                     
-    
+    #CROSSWORD GENERATION
+    #crossword score dicts (one for horizontal, one for vertical): 
+        # keys = (row, col)
+        # values = dictionary of letters 
+            # keys = valid letter for that location 
+            # values = score for that crossword  
+    def pull_all_crossword_scores(self, board, rack):
+        crossword_scores_for_horizontal = {}
+        crossword_scores_for_vertical = {}
+        for row in range(board.MIN_ROW, board.MAX_ROW):
+            for col in range(board.MIN_COL, board.MAX_COL):
+                crossword_scores_for_horizontal[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), HORIZONTAL, rack) 
+                crossword_scores_for_vertical[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), VERTICAL, rack) 
+        return {HORIZONTAL: crossword_scores_for_horizontal, VERTICAL: crossword_scores_for_vertical)}
+
     def pull_crossword_scores_at_location(self, location, orig_direction, rack):
         #dedupe the rack so we only compute crossword  scores for minimum set of letters 
         rack_uniq = set(rack)
@@ -594,6 +384,7 @@ class Move:
                 location = location.offset(1, 0)
             else:
                 location = location.offset(0, 1)
+                
         # check if we formed a valid word 
         try:
             self.validate_tile_word_in_dictionary(tile_crossword)              
@@ -603,4 +394,188 @@ class Move:
         
         # calculate the score 
         return self.calc_word_score(tile_crossword, board) 
+        
+        
+        
+        
+        
+
+            
+                    
+    #################
+    def attempt_computer_move(self, player):        
+        self.generate_all_possible_moves(player.rack)
+        if self.comp_max_word:
+            self.place_word(self.comp_max_row, self.comp_max_col, self.comp_max_direction, self.comp_max_word, player)
+        return (self.comp_max_score, self.comp_max_word)
+
+    def generate_all_possible_moves(self, rack):
+               
+        for row in range(MIN_ROW, MAX_ROW):
+            valid_hook_spots = self.pull_hooks(start_row, start_col, direction, player.rack)
+            valid_crossword_score_dict = self.pull_crosswords(start_row, start_col, direction, player.rack)
+                
+            prev_hook_spot = MIN_COL
+            for (hook_row, hook_col) in valid_hook_spots:
+                self.generate_moves_for_hook_spot(None, rack, [], 0, hook_row, hook_col, \
+                                                  HORIZONTAL, prev_hook_spot, valid_crossword_score_dict, "")
+                prev_hook_spot = hook_col + 1
+        
+
+
+        for col in range(MIN_COL, MAX_COL):
+            valid_hook_spots = self.pull_hooks(start_row, start_col, direction, player.rack)
+            valid_crossword_score_dict = self.pull_crosswords(start_row, start_col, direction, player.rack)    
+            prev_hook_spot = MIN_ROW
+            for (hook_row, hook_col) in valid_hook_spots:
+                if DEBUG_ALL_MOVES:
+                    print("Generating moves for this hook spot: " + str((hook_row, hook_col)))
+                self.generate_moves_for_hook_spot(None, rack, [], 0, hook_row, hook_col, \
+                                                  VERTICAL, prev_hook_spot, valid_crossword_score_dict, "")
+                prev_hook_spot = hook_row + 1
+
+                
+    def generate_moves_for_hook_spot(self, curr_node, curr_rack, curr_word, 
+                       curr_offset, hook_row, hook_col, direction, boundary,
+                       valid_crossword_score_dict, indent):        
+        if direction == HORIZONTAL:
+            (curr_row, curr_col) = (hook_row, hook_col + curr_offset)
+        else:
+            (curr_row, curr_col) = (hook_row + curr_offset, hook_col)
+
+        #stop placing if we've reached the previous hook spot (or if we pass the max boundary of the board)
+        if (direction == HORIZONTAL and curr_col < boundary) or \
+           (direction == VERTICAL and curr_row < boundary) or \
+           (curr_col >= MAX_COL) or (curr_row >= MAX_ROW):
+            if DEBUG_GENERATE_MOVES:
+                print (indent + GEN_MOVES_PRINT_INDENT + "reached a boundary")
+            return
+        
+        #if there is already a tile here, try to place this as the next move
+        if self.has_scrabble_tile(curr_row, curr_col):
+            letter = self.board[curr_row][curr_col]
+            if curr_node is None:
+                curr_node = SCRABBLE_APPRENTICE_GADDAG.start_node
+            self.concatenate_next(letter, curr_node, curr_rack, curr_word,
+                       curr_offset, hook_row, hook_col, direction, boundary,
+                       valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT + GEN_MOVES_PRINT_INDENT)
+
+        #otheriwse, if we still have tiles left, try to place
+        elif curr_rack:
+            #iterate over the set of valid crossletters
+            if (curr_row, curr_col) in valid_crossword_score_dict.keys():
+                for letter in valid_crossword_score_dict[(curr_row, curr_col)].keys():
+                    if letter in curr_rack:
+                        new_rack = curr_rack[:]
+                        new_rack.remove(letter)
+                        if DEBUG_GENERATE_MOVES:
+                            print(indent + GEN_MOVES_PRINT_INDENT + "found letter " + letter + "--new rack is " + str(new_rack))
+                        if curr_node is None:
+                            curr_node = SCRABBLE_APPRENTICE_GADDAG.start_node
+                        self.concatenate_next(letter, curr_node, new_rack, curr_word,
+                                   curr_offset, hook_row, hook_col, direction, boundary,
+                                   valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT + GEN_MOVES_PRINT_INDENT)
+        
+        
+    def find_coordinate_bounds_of_word(self, curr_offset, hook_row, hook_col, direction, word):
+        if direction == HORIZONTAL:
+            # either we were offset to the beginning of the word (i.e. we hit eow on a reversed prefix)
+            if curr_offset <= 0:
+                (start_row, start_col) = (hook_row, hook_col + curr_offset)
+            # or we were offset to the end of the word
+            else:
+                (start_row, start_col) = (hook_row, hook_col + curr_offset - len(word) + 1)
+            (end_row, end_col) = (start_row, start_col + len(word) - 1)
+        else:
+            if curr_offset <= 0:
+                (start_row, start_col) = (hook_row + curr_offset, hook_col)
+            else:
+                (start_row, start_col) = (hook_row + curr_offset - len(word) + 1, hook_col)
+            (end_row, end_col) = (start_row + len(word) - 1, start_col)
+        return (start_row, start_col, end_row, end_col)
+       
+    # checks that if we continue to concatenate, that there is NOT a tile to the left (above) or to the right (below) of this eow
+    def ends_are_filled(self, curr_offset, hook_row, hook_col, direction, word, front_or_back):
+        (start_row, start_col, end_row, end_col) = \
+            self.find_coordinate_bounds_of_word(curr_offset, hook_row, hook_col, direction, word)
+        if direction == HORIZONTAL:
+            (front_row, front_col) = (start_row, start_col - 1)
+            (back_row, back_col) = (end_row, end_col + 1)
+        else:
+            (front_row, front_col) = (start_row - 1, start_col)
+            (back_row, back_col) = (end_row + 1, end_col)
+        if front_or_back == FRONT_END:
+            return self.has_scrabble_tile(front_row, front_col)
+        elif front_or_back == FRONT_OR_BACK_END:
+            return self.has_scrabble_tile(front_row, front_col) or self.has_scrabble_tile(back_row, back_col)
+        else:
+            raise ValueError("Requested something besides FRONT_END or FRONT_OR_BACK_END")
+            
+    #REFACTOR CORE RECURSIVE CALL -- keep building up the string 
+    #tries to concatenate the input letter onto the prefix or suffix of the word    
+    def concatenate_next(self, letter, curr_node, curr_rack, curr_word,
+                       curr_offset, hook_row, hook_col, direction, boundary,
+                       valid_crossword_score_dict, indent):
+        #if we've reached an ending node, save this word (for both prefix and suffix b/c the prefix could be the WHOLE word)
+        if letter in curr_node.eow_set:
+            if curr_offset <= 0:
+                completed_word = [letter] + curr_word
+            else:
+                completed_word = curr_word + [letter]
+            if not self.ends_are_filled(curr_offset, hook_row, hook_col, direction, completed_word, FRONT_OR_BACK_END):
+                self.computer_save_word_and_score(curr_offset, hook_row, hook_col, direction, completed_word, 
+                                           valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT) 
+        #placing prefix
+        if curr_offset <= 0:
+            if letter in curr_node.edges.keys():
+                curr_node = curr_node.edges[letter]
+                new_word = [letter] + curr_word
+                self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
+                                    curr_offset - 1, hook_row, hook_col, direction, boundary,
+                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
+                #if the next node leads to a hook, then we have to reverse 
+                #(unless we're bumping up against another tile on the board)
+                if scrabble_apprentice_gaddag.GADDAG_HOOK in curr_node.edges.keys() and \
+                not self.ends_are_filled(curr_offset, hook_row, hook_col, direction, new_word, FRONT_END):
+                    curr_node = curr_node.edges[scrabble_apprentice_gaddag.GADDAG_HOOK]
+                    self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
+                                    1, hook_row, hook_col, direction, boundary,
+                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
+        #placing suffix
+        else:      
+            if letter in curr_node.edges.keys():
+                curr_node = curr_node.edges[letter]
+                new_word = curr_word + [letter]
+                self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
+                                    curr_offset + 1, hook_row, hook_col, direction, boundary,
+                                    valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
+                
+        
+        
+
+    #this is called once we hit the end of a word     
+    def computer_save_word_and_score(self, curr_offset, hook_row, hook_col, direction, word, valid_crossword_score_dict):
+        (start_row, start_col, end_row, end_col) = self.find_coordinate_bounds_of_word(curr_offset, hook_row, hook_col, direction, word)
+        word_score = self.calc_word_score(start_row, start_col, direction, word, valid_crossword_score_dict)
+        #exception for the first move
+        if self.num_words_placed == 0 and not self.intersect_center_tile(start_row, start_col, direction, word):
+            return
+        
+            
+        cleaned_word = ''.join(word) #make this a string for ease of reading--this dictionary isn't used for anything aside from debugging
+        if (start_row, start_col) in self.comp_all_possible_moves[direction].keys():
+            if cleaned_word in self.comp_all_possible_moves[direction][(start_row, start_col)].keys():
+                raise ValueError("Resaving a word that was previously computer calculated with a different score")
+            self.comp_all_possible_moves[direction][(start_row, start_col)][cleaned_word] = word_score
+        else:
+            self.comp_all_possible_moves[direction][(start_row, start_col)] = {}
+            self.comp_all_possible_moves[direction][(start_row, start_col)][cleaned_word] = word_score
+            
+        if word_score > self.comp_max_score:
+            self.comp_max_score = word_score
+            self.comp_max_word = word #save this as a list since this is the standard type throughout
+            self.comp_max_row = start_row
+            self.comp_max_col = start_col
+            self.comp_max_direction = direction
+               
                         
