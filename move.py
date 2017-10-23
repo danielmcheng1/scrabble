@@ -29,8 +29,10 @@ class Move:
             self.attempt_human_move(board, bag, player, action, tiles)
         else:
             self.attempt_computer_move(board, bag, player) 
+            
     def get_result(self):
         return self.result 
+    
     def succeeded(self):
         return self.result["success_flag"]
     '''
@@ -97,12 +99,10 @@ class Move:
         except as e:
             self.log_error_human(e)
             return 
-        self.log_success(PLACE_TILES, tile_word)
         
-        
-        #score and place word
+        # score and log the result 
         human_score = self.calc_word_score(tile_word, board)
-        return human_score
+        self.log_success_human_placed(tile_word, sorted_tiles, score)
         
     ### VALIDATE PLACING TILES FOR HUMAN ###
     def validate_tile_word_in_dictionary(self, tile_word):

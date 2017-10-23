@@ -38,6 +38,4 @@ class Tile:
         self.location = location 
         
     def serialize(self):
-        return {'letter': self.letter, 'points': self.points, 'player': self.player.serialize(), 'location': self.location.serialize()}
-
-    
+        return {'letter': self.letter, 'points': self.points, 'player': self.player.serialize_type(), 'location': self.location.serialize()}

@@ -8,33 +8,42 @@ class Board:
     (MIN_ROW, MAX_ROW) = (0, 15)
     (MIN_COL, MAX_COL) = (0, 15)
     (CENTER_ROW, CENTER_COL) = (7, 7)
-
-    FRONT_END = 1 #for checking if the spot before the first tile is filled
-    FRONT_OR_BACK_END = 2 #for checking if the spots before and after the word are filled
-
-    #highest for loop appears first!! http://rhodesmill.org/brandon/2009/nested-comprehensions/
+    
     def __init__(self, bag, score_dict, corpus):
-        self.board = [[self.get_bonus(row, col) for col in range(MIN_COL, MAX_COL)] for row in range(MIN_ROW, MAX_ROW)]
-        self.board_to_player = [["" for col in range(MIN_COL, MAX_COL)] for row in range(MIN_ROW, MAX_ROW)]
-        self.num_words_placed = 0
-        self.bag = bag
-        self.scrabble_score_dict = score_dict
-        self.scrabble_corpus = corpus
-    
-    def get_bonus_word_multiplier(self, row, col):
-        if self.get_bonus == TRIPLE_WORD:
-            return 3
-        if self.get_bonus == DOUBLE_WORD:
-            return 2
-        return 1
-    
-    def get_bonus_letter_multiplier(self, row, col);
-        if self.get_bonus == TRIPLE_LETTER:
-            return 3
-        if self.get_bonus == DOUBLE_LETTER:
-            return 2
-        return 1
+        # the physical board with either blanks or bonuses 
+        self.grid = [[self.get_bonus(row, col) for col in range(MIN_COL, MAX_COL)] for row in range(MIN_ROW, MAX_ROW)]
+        # keep track of any tiles that have been placed 
+        self.tiles_placed = [[None for col in range(MIN_COL, MAX_COL)] for row in range(MIN_ROW, MAX_ROW)]
+        # convenient counter 
+        self.num_words_placed = 0      
+    def serialize_grid(self):
+        return self.grid 
         
+    def serialize_tiles_placed(self):
+        return [['' if tile is None else tile.serialize() for tile in row] for row in self.tiles_placed]
+    ### UPDATE BOARD ### 
+    def add_tiles(self, tiles):
+        for tile in tiles:
+            self.tiles_placed[tile.get_row()][tile.get_col()] = tile 
+            
+    # REFACTOR pick one of these -- currently balancing between location vs (row, col) implementation 
+    ### TILE UTILITY METHODS ### 
+    def has_tile(self, location):
+        return has_scrabble_tile(location.get_row(), location.get_col())
+        
+    def has_scrabble_tile(self, row, col):
+        # Edge case: Went beyond bounds of board (can happen when offsetting in the Move class)
+        if row < MIN_ROW or col < MIN_COL or row >= MAX_ROW or col >= MAX_COL:
+            return False
+        elif self.tiles_placed[row][col] is None:
+            return False
+        else:
+            return True 
+            
+    def get_tile(self, location):
+        return self.tiles_placed[location.get_row(), location.get_col()]
+        
+    ### BONUS SQUARE UTILITY METHODS ### 
     def get_bonus(self, row, col):
         if not (row % 7) and not (col % 7) and not (row == 7 and col == 7):
             return TRIPLE_WORD
@@ -52,33 +61,17 @@ class Board:
         else:
             return NO_BONUS
             
-            
-    #exception for the first move
-    #REFACTOR can probably just be determined by hook spots
-    def intersect_center_tile(self, start_row, start_col, direction, word):
-        if direction == HORIZONTAL:
-            if start_row != 7 or start_col > CENTER_COL or start_col + len(word) - 1 < CENTER_COL:
-                return False
-        else:
-            if start_col != 7 or start_row > CENTER_ROW or start_row + len(word) - 1 < CENTER_ROW:
-                return False
-        return True
-            
+    def get_bonus_word_multiplier(self, row, col):
+        if self.get_bonus() == TRIPLE_WORD:
+            return 3
+        if self.get_bonus() == DOUBLE_WORD:
+            return 2
+        return 1
     
-    #TBD: false for beyond boudnaries seems dangerous
-    #REFACTOR pick one 
-    def has_tile(self, location):
-        return has_scrabble_tile(location.get_row(), location.get_col())
-        
-    def has_scrabble_tile(self, row, col):
-        #went beyond bounds of board--useful when checking valid anchor squares and whether the ends are filled
-        #we have to make this explicit or else board[-1] will wrap around!!
-        if row < MIN_ROW or col < MIN_COL or row >= MAX_ROW or col >= MAX_COL:
-            return False
-        elif self.board[row][col].isalpha():
-            return True
-        else:
-            return False
-    def get_tile(self, location):
-        return self.board[location.get_row(), location.get_col()]
-        
+    def get_bonus_letter_multiplier(self, row, col);
+        if self.get_bonus() == TRIPLE_LETTER:
+            return 3
+        if self.get_bonus() == DOUBLE_LETTER:
+            return 2
+        return 1
+            
