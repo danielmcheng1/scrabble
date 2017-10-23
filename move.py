@@ -2,7 +2,8 @@
 import tile  
 import location    
 import board 
- 
+
+# REFACTOR errors? at least not value error....
 class Move: 
     PLACE_TILES = "Place tiles"
     EXCHANGE_TILES = "Exchange tiles"
@@ -15,20 +16,24 @@ class Move:
     BINGO_BONUS = 50
     
     def __init__(self, board, bag, player, action = None, tiles = None):
+        # save hook spots and crossword spots -- used to determine validity throughout 
         self.all_hook_spots = self.pull_all_hook_spots(board)
         self.all_crossword_scores = self.pull_all_crossword_scores(board, player)
+        
+        # logs (1) if the human's attempted move was valid, and (2) the optimal move calculated by the computer 
+        # game controller class uses this to update the board/racks and return to the front end 
         self.result = {"player": player, "action": action, "success_flag": False, "detail": {}}
         
+        # now attempt the move 
         if self.player.is_human():
-            self.attempt_human_move(board, bag, player, tiles)
+            self.attempt_human_move(board, bag, player, action, tiles)
         else:
             self.attempt_computer_move(board, bag, player) 
-        
-         
-               
-    #################
-    def attempt_computer_move(self, board, bag, player):
-        
+    '''
+    FOR HUMAN PLAYER:
+        (1) Validate that attempted move is legal (e.g. tiles placed on board form a valid word, exchanging a valid # of tiles)
+        (2) If the player is attempting to place tiles on the board, pull the full word (since this involves board tiles) and calculate the score 
+    '''
     def attempt_human_move(self, board, bag, player, attempted_tiles, move_type):
         sorted_tiles = self.sort_tiles(attempted_tiles)
         if move_type == PLACE_TILES:
@@ -38,6 +43,7 @@ class Move:
         elif move_type == PASS:
             self.attempt_pass()
         
+    ### HUMAN: PLACE TILES ###
     def attempt_place_tiles(self, sorted_tiles, board):
         try:
             self.validate_nonzero_tiles(sorted_tiles)
@@ -94,159 +100,7 @@ class Move:
         human_score = self.calc_word_score(tile_word, board)
         return human_score
         
-    # REFACTOR errors? at least not value error....
-      
-    def find_used_rows_and_cols(self, tiles):
-        rows = set([])
-        cols = set([])
-        for tile in tiles:
-            rows.add(tile.location.get_row())
-            cols.add(tile.location.get_col())
-        return (rows, cols) 
-        
-    def has_tile_above_or_below(self, tile, board):
-        tile_row = tile.location.get_row()
-        tile_col = tile.location.get_col() 
-        return board.has_scrabble_tile(tile_row, tile_col - 1) or board.has_scrabble_tile(tile_row, tile_col + 1)
-    
-    # walk upwards/leftwards from the first player-placed tile, until there are no more existing board tiles 
-    # this must then be the start of the actual word 
-    def find_start_of_word(self, location_of_first_placed_tile, direction, board):
-        start_location = some_location 
-        while board.has_tile(location):
-            if direction == HORIZONTAL:
-                start_location = start_location.offset(-1, 0)
-            else 
-                start_location = start_location.offset(0, -1)
-        return start_location
-    
-    
-    ### 
-    def attempt_exchange_tiles(self, player, tiles, bag):
-        num_tiles_exchange = len(tiles) 
-        num_tiles_in_bag = bag.num_tiles_left() 
-        exchange_grammar = "tile" if num_tiles_exchange == 1 else "tiles" 
-        bag_grammar = "tile" if num_tiles_in_bag == 1 else "tiles" 
-        
-        if num_tiles_exchange == 0:
-            self.log_error_human("Must exchange at least one tile. Perhaps you meant to pass instead?")
-            return 
-            
-        if num_tiles_exchange > num_tiles_in_bag:
-            self.log_error_human("You cannot exchange {0} {1}--only {2} {3} are left in the bag".format(num_tiles_exchange, exchange_grammar, num_tiles_in_bag, bag_grammar))
-            return
-        self.log_success_exchanged(tiles)
-        
-    def attempt_pass(self, player):
-        self.log_success_passed()
-
-    #################        
-    # calculate Scrabble score for a word (represented as a list of TILE objects)
-    def calc_word_score(self, tile_word, board):
-        if len(tile_word) == 0: 
-            return 0 
-        start_location = tile_word[0].location 
-            
-        num_tiles_placed = 0 # if 7 tiles placed, then add bingo bonus 
-        crossword_scores = 0 # to keep track of all crossword scores (avoid applying multiplier twice to these)
-        total_score = 0 # running total score
-        word_multiplier = 1 # running word multiplier (applied at the end)
-
-        for i in range(0, len(tile_word)):
-            # move to the next location on the board
-            if direction == HORIZONTAL:
-                location = start_location.offset(i, 0)
-            else:
-                location = start_location.offset(0, i)
-            (row, col) = location.get_tuple()
-            
-            # only count multipliers for new squares (i.e. multiplier only counts at the time of play) 
-            letter_multiplier = 1 
-            if not board.has_tile(location):
-                letter_multiplier = board.get_bonus_letter_multiplier(row, col)
-                word_multiplier *= board.get_bonus_word_multiplier(row, col)
-                num_tiles_placed += 1
-            total_score += letter_multiplier * tile_word[i].points 
-            
-            # add in scores from crossword (multipliers already included in these) 
-            if letter in all_crossword_scores[direction][(row, col)].keys():
-                crossword_scores += all_crossword_scores[direction][(row, col)][letter]
-        
-        #final word multiplier bonus
-        total_score *= word_multiplier
-        
-        #add in crossword scores and bingo scores
-        total_score += crossword_scores
-        if num_tiles_placed == rack.MAX_NUM_TILES:
-            total_score += BINGO_BONUS
-            
-        return total_score        
-
-    #####
-    ### UTILITY METHODS 
-    def sort_tiles(self, tiles):
-        return sorted(tiles, key = lambda tile: (tile.location.get_row(), tile.location.get_col()))
-    
-    def get_direction(self, sorted_tiles):
-        (used_rows, used_cols) = self.find_used_rows_and_cols(sorted_tiles)
-        if len(filled_rows) == 1:
-            # exception: if only one tile is placed, check if the word formed is actually going vertically 
-            if len(sorted_tiles) == 0 and self.has_tile_above_or_below(sorted_tiles[0], board):
-                direction = VERTICAL 
-            else:
-                direction = HORIZONTAL 
-        else: 
-            direction = VERTICAL 
-        return direction 
-        
-    #####
-    ### VALIDATION 
-    def log_error_human(e): 
-        result["success_flag"] = False 
-        result["action"] = MADE_ILLEGAL_MOVE
-        result["detail"]["description"] = "".join(e.args)
-        
-    def log_success_human_placed(tile_word, tiles_used, score):
-        result["success_flag"] = True 
-        result["action"] = PLACE_TILES
-        result["detail"]["word"] = "".join([tile.letter for tile in tile_word])
-        result["detail"]["tiles_used"] = tiles_used 
-        result["detail"]["score"] = score 
-        
-    def log_success_computer_placed(word, tile_builder):
-        result["success_flag"] = True 
-        result["action"] = PLACE_TILES
-        
-        tiles_used = tile_builder.tiles_used
-        score = self.calc_word_score(tiles_used)
-        word = [tile.letter for tile in tiles_used]
-        
-        if score > result["detail"].get("score", 0):
-            result["detail"]["score"] = score 
-            result["detail"]["word"] = word
-            result["detail"]["tiles_used"] = tiles_used
-         
-    def log_success_exchanged(tiles_used):
-        result["success_flag"] = True 
-        result["action"] = EXCHANGE_TILES
-        result["detail"]["word"] = "EXCHANGED"
-        result["detail"]["tiles_used"] = [] 
-        result["detail"]["score"] = 0 
-        
-    def log_success_passed():
-        result["success_flag"] = True 
-        result["action"] = PASS
-        result["detail"]["word"] = "PASSED"
-        result["detail"]["tiles_used"] = [] 
-        result["detail"]["score"] = 0
-        
-    # returns result of attempted move by computer or human 
-    # "attempted" because human tile placement may be invalid
-    # game controller classes uses this to update the board/rack and return to the front end 
-    def get_result(self):
-        return self.result 
-        
-        
+    ### VALIDATE PLACING TILES FOR HUMAN ###
     def validate_tile_word_in_dictionary(self, tile_word):
         self.validate_word_in_dictionary([tile.letter for tile in tile_word])
         
@@ -277,10 +131,75 @@ class Move:
         (row, col) = location.get_tuple()
         if letter not in all_crossword_scores[direction][(row, col)].keys():
             raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(letter, cross_direction_description))
-     
-    #####
-    ### HOOK SPOT GENERATION
-    #hook spots: list of (row, col) where a new word could be placed
+       
+    ### OTHER SUPPORTING METHODS FOR HUMAN PLACING TILES ###
+    def sort_tiles(self, tiles):
+        return sorted(tiles, key = lambda tile: (tile.location.get_row(), tile.location.get_col()))
+    
+    def get_direction(self, sorted_tiles):
+        (used_rows, used_cols) = self.find_used_rows_and_cols(sorted_tiles)
+        if len(filled_rows) == 1:
+            # exception: if only one tile is placed, check if the word formed is actually going vertically 
+            if len(sorted_tiles) == 0 and self.has_tile_above_or_below(sorted_tiles[0], board):
+                direction = VERTICAL 
+            else:
+                direction = HORIZONTAL 
+        else: 
+            direction = VERTICAL 
+        return direction 
+        
+    def find_used_rows_and_cols(self, tiles):
+        rows = set([])
+        cols = set([])
+        for tile in tiles:
+            rows.add(tile.location.get_row())
+            cols.add(tile.location.get_col())
+        return (rows, cols) 
+        
+    def has_tile_above_or_below(self, tile, board):
+        tile_row = tile.location.get_row()
+        tile_col = tile.location.get_col() 
+        return board.has_scrabble_tile(tile_row, tile_col - 1) or board.has_scrabble_tile(tile_row, tile_col + 1)
+    
+    # walk upwards/leftwards from the first player-placed tile, until there are no more existing board tiles 
+    # this must then be the start of the actual word 
+    def find_start_of_word(self, location_of_first_placed_tile, direction, board):
+        start_location = some_location 
+        while board.has_tile(location):
+            if direction == HORIZONTAL:
+                start_location = start_location.offset(-1, 0)
+            else 
+                start_location = start_location.offset(0, -1)
+        return start_location
+    
+    
+    ### HUMAN EXCHANGING TILES ###
+    def attempt_exchange_tiles(self, player, tiles, bag):
+        num_tiles_exchange = len(tiles) 
+        num_tiles_in_bag = bag.num_tiles_left() 
+        exchange_grammar = "tile" if num_tiles_exchange == 1 else "tiles" 
+        bag_grammar = "tile" if num_tiles_in_bag == 1 else "tiles" 
+        
+        if num_tiles_exchange == 0:
+            self.log_error_human("Must exchange at least one tile. Perhaps you meant to pass instead?")
+            return 
+            
+        if num_tiles_exchange > num_tiles_in_bag:
+            self.log_error_human("You cannot exchange {0} {1}--only {2} {3} are left in the bag".format(num_tiles_exchange, exchange_grammar, num_tiles_in_bag, bag_grammar))
+            return
+        self.log_success_exchanged(tiles)
+    
+    ### HUMAN PASSING ###
+    def attempt_pass(self, player):
+        self.log_success_passed()
+
+        
+        
+    '''
+    SHARED METHODS BETWEEN COMPUTER AND HUMAN
+    '''
+    ### HOOK SPOT GENERATION ###
+    # hook spots: list of (row, col) where a new word could be placed
     def pull_all_hook_spots(self, board):
         valid_hook_spots = []
         for row in range(board.MIN_ROW, board.MAX_ROW):
@@ -312,8 +231,8 @@ class Move:
                 else:
                     return False 
                     
-    #CROSSWORD GENERATION
-    #crossword score dicts (one for horizontal, one for vertical): 
+    ### CROSSWORD GENERATION ###
+    # crossword score dicts (one for horizontal, one for vertical): 
         # keys = (row, col)
         # values = dictionary of letters 
             # keys = valid letter for that location 
@@ -383,11 +302,98 @@ class Move:
         return self.calc_word_score(tile_crossword, board) 
         
         
+    ### SCORE CALCULATION ###
+    # calculate Scrabble score for a word (represented as a list of TILE objects)
+    def calc_word_score(self, tile_word, board):
+        if len(tile_word) == 0: 
+            return 0 
+        start_location = tile_word[0].location 
+            
+        num_tiles_placed = 0 # if 7 tiles placed, then add bingo bonus 
+        crossword_scores = 0 # to keep track of all crossword scores (avoid applying multiplier twice to these)
+        total_score = 0 # running total score
+        word_multiplier = 1 # running word multiplier (applied at the end)
+
+        for i in range(0, len(tile_word)):
+            # move to the next location on the board
+            if direction == HORIZONTAL:
+                location = start_location.offset(i, 0)
+            else:
+                location = start_location.offset(0, i)
+            (row, col) = location.get_tuple()
+            
+            # only count multipliers for new squares (i.e. multiplier only counts at the time of play) 
+            letter_multiplier = 1 
+            if not board.has_tile(location):
+                letter_multiplier = board.get_bonus_letter_multiplier(row, col)
+                word_multiplier *= board.get_bonus_word_multiplier(row, col)
+                num_tiles_placed += 1
+            total_score += letter_multiplier * tile_word[i].points 
+            
+            # add in scores from crossword (multipliers already included in these) 
+            if letter in all_crossword_scores[direction][(row, col)].keys():
+                crossword_scores += all_crossword_scores[direction][(row, col)][letter]
+        
+        #final word multiplier bonus
+        total_score *= word_multiplier
+        
+        #add in crossword scores and bingo scores
+        total_score += crossword_scores
+        if num_tiles_placed == rack.MAX_NUM_TILES:
+            total_score += BINGO_BONUS
+            
+        return total_score        
+
+    ### LOGGING THE RESULT ###
+    def log_error_human(e): 
+        result["success_flag"] = False 
+        result["action"] = MADE_ILLEGAL_MOVE
+        result["detail"]["description"] = "".join(e.args)
+        
+    def log_success_human_placed(tile_word, tiles_used, score):
+        result["success_flag"] = True 
+        result["action"] = PLACE_TILES
+        result["detail"]["word"] = "".join([tile.letter for tile in tile_word])
+        result["detail"]["tiles_used"] = tiles_used 
+        result["detail"]["score"] = score 
+        
+    def log_success_computer_placed(word, tile_builder):
+        result["success_flag"] = True 
+        result["action"] = PLACE_TILES
+        
+        tiles_used = tile_builder.tiles_used
+        score = self.calc_word_score(tiles_used)
+        word = [tile.letter for tile in tiles_used]
+        
+        if score > result["detail"].get("score", 0):
+            result["detail"]["score"] = score 
+            result["detail"]["word"] = word
+            result["detail"]["tiles_used"] = tiles_used
+         
+    def log_success_exchanged(tiles_used):
+        result["success_flag"] = True 
+        result["action"] = EXCHANGE_TILES
+        result["detail"]["word"] = "EXCHANGED"
+        result["detail"]["tiles_used"] = [] 
+        result["detail"]["score"] = 0 
+        
+    def log_success_passed():
+        result["success_flag"] = True 
+        result["action"] = PASS
+        result["detail"]["word"] = "PASSED"
+        result["detail"]["tiles_used"] = [] 
+        result["detail"]["score"] = 0
+    
         
         
-    #################
+    ''' 
+    COMPUTER MOVE:
+        (1) Run greedy algorithm to find the highest scoring word on this turn 
+        (2) If no moves are possible, log that the computer exchanged all tiles in rack 
+        (3) If no tiles are left, log that the computer passed 
+    '''
     def attempt_computer_move(self, player, board, bag):        
-        self.generate_all_possible_moves(player.rack, board)
+        self.find_highest_scoring_word(player.rack, board)
         if not self.result["success_flag"]:
             if bag.has_tiles_left():
                 log_success_exchanged(player.rack.get_n_tiles(min(bag.num_tiles_left(), rack.Rack.MAX_NUM_TILES))):
@@ -395,7 +401,8 @@ class Move:
                 log_success_passed()
                 
 
-    def generate_all_possible_moves(self, rack, board):
+    ### COMPUTER FINDING HIGHEST SCORING MOVE ###
+    def find_highest_scoring_word(self, rack, board):
         # iterate over all possible hook spots, building up words going both HORIZONTALLY and VERTICALLY 
         # maintain pointer to the previous hook spot so that we do not recalculate possible words for that spot--when moving back from the current spot 
         boundary = MIN_COL
@@ -403,7 +410,7 @@ class Move:
             constraint = Constraint(hook_row, hook_col, HORIZONTAL, boundary)
             context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
             
-            self.generate_moves_for_hook_spot(board, constraint, context)
+            self.find_words_at_hook_spot(board, constraint, context)
             boundary = hook_col + 1
        
         boundary = MIN_ROW
@@ -411,9 +418,10 @@ class Move:
             constraint = Constraint(hook_row, hook_col, VERTICAL, boundary)
             context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
             
-            self.generate_moves_for_hook_spot(board, constraint, context)
+            self.find_words_at_hook_spot(board, constraint, context)
             boundary = hook_row + 1
-    def generate_all_possible_moves(self, board, rack):
+            
+    def find_words_at_hook_spot(self, board, rack):
         for (hook_row, hook_col) in valid_hook_spots:
             self.generate_all_possible_moves_for_hook_location(board, rack, location.Location(hook_row, hook_col))
     
