@@ -12,6 +12,20 @@ class Player:
     def is_human(self):
         return self.is_human 
     
+    def draw_tiles(self, bag, n):
+        # architecture assumes validation happened in move class 
+        num_tiles_to_draw = min(bag.num_tiles_left, n)
+        bag.shuffle_bag()
+        for i in range(0, num_tiles_to_draw):
+            self.rack.add_tile(bag.draw_tile())
+            
+    def exchange_tiles(self, bag, tiles):
+        bag.shuffle_bag() 
+        for tile in tiles:
+            self.rack.remove_one_tile_with_letter(tile.letter)
+            self.rack.add_tile(bag.draw_tile())
+            
+        
     # specific case e.g. need to tell front end that a tile was played by the human or computer 
     def serialize_type(self):
         if self.is_human:
@@ -19,10 +33,4 @@ class Player:
         else:
             return "Computer"
             
-    def print_player_state(self):
-        print("Current running score for " + self.name + ": " + str(self.running_score) + " pts")
-        print("Current rack for " + self.name + ": " + ''.join(self.rack))
-        print("Words played and scores:")
-        for (pos, (word, score)) in enumerate(self.words_played):
-            print(str(pos + 1) + ". " + ''.join(word) + " - " + str(score) + " pts")
             

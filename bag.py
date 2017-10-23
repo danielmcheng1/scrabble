@@ -2,18 +2,21 @@ import random
 import tile 
 class Bag:
     def __init__(self):
-        self.bag = load_scrabble_bag() 
-        
-    def load_scrabble_bag():
-        scrabble_bag = []
+        self.bag = []
         scrabble_freq_dict = load_scrabble_freq_dict()
         for letter in scrabble_freq_dict.keys():
-            scrabble_bag = scrabble_bag + [tile.Tile(letter, None, None)] * scrabble_freq_dict[letter]
-        random.shuffle(scrabble_bag)
-        return scrabble_bag
+            self.bag = self.bag + [tile.Tile(letter, None, None)] * scrabble_freq_dict[letter]
+        self.shuffle_bag()
+        
+    def shuffle_bag(self):
+        random.shuffle(bag)
+    
+    # for randomness, assumes bag was shuffled beforehand 
+    def draw_tile(self):
+        bag.pop() 
         
     def num_tiles_left(self):
-        return len(scrabble_bag) 
+        return len(bag) 
         
     def has_tiles_left(self):
         return len(self.bag) > 0 
