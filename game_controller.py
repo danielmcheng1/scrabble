@@ -39,7 +39,7 @@ class GameController:
             self.implement_last_move() 
             
             # now find the optimal computer move is 
-            self.last_move = move.Move(self.board, self.bag, self.compute_player)
+            self.last_move = move.Move(self.board, self.bag, self.computer_player)
             
             # and implement that computer move 
             self.implement_last_move()

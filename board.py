@@ -20,7 +20,7 @@ class Board:
     ### UPDATE BOARD ### 
     def add_tiles(self, tiles):
         for tile in tiles:
-            self.tiles_placed[tile.get_row()][tile.get_col()] = tile 
+            self.tiles_placed[tile.location.get_row()][tile.location.get_col()] = tile 
             
     ### SERIALIZE FOR FRONT END DISPLAY 
     def serialize_grid(self):
@@ -65,16 +65,16 @@ class Board:
             return Board.NO_BONUS
             
     def get_bonus_word_multiplier(self, row, col):
-        if self.get_bonus() == TRIPLE_WORD:
+        if self.get_bonus(row, col) == Board.TRIPLE_WORD:
             return 3
-        if self.get_bonus() == DOUBLE_WORD:
+        if self.get_bonus(row, col) == Board.DOUBLE_WORD:
             return 2
         return 1
     
     def get_bonus_letter_multiplier(self, row, col):
-        if self.get_bonus() == TRIPLE_LETTER:
+        if self.get_bonus(row, col) == Board.TRIPLE_LETTER:
             return 3
-        if self.get_bonus() == DOUBLE_LETTER:
+        if self.get_bonus(row, col) == Board.DOUBLE_LETTER:
             return 2
         return 1
             

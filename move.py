@@ -107,7 +107,7 @@ class Move:
             return 
         
         # score and log the result 
-        human_score = self.calc_word_score(tile_word, board)
+        score = self.calc_word_score(tile_word, board)
         self.log_success_human_placed(tile_word, sorted_tiles, score)
         
     ### VALIDATE PLACING TILES FOR HUMAN ###
@@ -487,6 +487,7 @@ class Move:
             total_score += letter_multiplier * tile_word[i].points 
             
             # add in scores from crossword (multipliers already included in these) 
+            letter = tile_word[i].letter
             if letter in self.all_crossword_scores[direction][(row, col)].keys():
                 crossword_scores += self.all_crossword_scores[direction][(row, col)][letter]
         
