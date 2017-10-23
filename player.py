@@ -35,7 +35,7 @@ class Player:
     
     def add_new_word_played(self, word, score):
         self.words_played.append({"word": word, "score": score})
-        self.score += score 
+        self.running_score += score 
           
     # specific case e.g. need to tell front end that a tile was played by the human or computer 
     def serialize_type(self):

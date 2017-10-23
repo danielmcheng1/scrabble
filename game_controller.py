@@ -58,49 +58,8 @@ class GameController:
         player.add_new_word_played(last_move.get_resulting_word(), last_move.get_resulting_score())
         player.draw_tiles_at_end_of_turn(self.bag)
         
-    def serialize(self):
-        self.board.serialize_grid()
-        self.board.serialize_tiles()
-        self.human_player.serialize_rack()
-        self.computer_player.serialize_rack()
-        self.last_move 
-    scrabble_game_play_wrapper = {"board": [[map_cell_to_bonus_view(scrabble_board.board[row][col]) for col in range(MAX_COL)] for row in range(MAX_ROW)], \
-                              "tiles": [[map_cell_to_tile_view(scrabble_board.board[row][col], map_cell_to_player_view(row, col, scrabble_board), scrabble_score_dict) for col in range(MAX_COL)] for row in range(MAX_ROW)], \
-                              "rackHuman": map_rack_to_tile_view(human_player.rack, "Human", scrabble_score_dict),   \
-                              "rackComputer": map_rack_to_tile_view(computer_player.rack, "Computer", scrabble_score_dict), \
-                              "gameInfo": {"scoreHuman": human_player.running_score, "scoreComputer": computer_player.running_score,
-                                           "wordsPlayedHuman": human_player.words_played, "wordsPlayedComputer": computer_player.words_played,
-                                           "tilesLeft": len(scrabble_board.bag),
-                                           "gameEndReason": scrabble_game_play.game_end_reason()}, \
-                              "lastMove": last_move_to_send
-                              }
-                                      
-        def wrapper_end_turn(player, word, score, game_play):
-            player.words_played.append({"word": word, "score": score})
-            player.running_score += score   
-            game_play.draw_tiles_end_of_turn(player, RACK_MAX_NUM_TILES - len(player.rack)) 
-            
-        def increment_turns_passed(scrabble_game_play, move):
-            if move["action"] == "Passed":
-                scrabble_game_play.num_turns_passed += 1
-            else:
-                scrabble_game_play.num_turns_passed = 0 
-    def get_game_info():
-        round_num
-        scores by player 
-        words played by player 
-        count_tiles_left
-        last move
-        game end reason
-        "gameInfo": {"scoreHuman": human_player.running_score, "scoreComputer": computer_player.running_score,
-                                   "wordsPlayedHuman": human_player.words_played, "wordsPlayedComputer": computer_player.words_played,
-                                   "tilesLeft": len(scrabble_board.bag),
-                                   "gameEndReason": scrabble_game_play.game_end_reason()}
-    
-    def game_has_ended(self):
-        return self.game_end_reason() != ""
-    
-    #game ends if (1) six turns have ended in passes or (2) a player has no tiles left and there are no tiles left in the bag 
+        
+    # game ends if (1) six turns have ended in passes or (2) a player has no tiles left and there are no tiles left in the bag 
     def game_end_reason(self):
         if self.num_consecutive_turns_passed == MAX_CONSECUTIVE_TURNS_PASSED: 
             return "Game over: {0} turns have ended in passes".format(MAX_CONSECUTIVE_TURNS_PASSED)
@@ -110,6 +69,31 @@ class GameController:
             if len(self.computer_player.rack) == 0:
                 return "Game over: {0} used up all tiles in its rack, and no tiles are left in the bag".format("Computer")
         return ""
+           
+    def game_has_ended(self):
+        return self.game_end_reason() != ""
     
+    # dumping out miscellaneous info for front end view
+    def serialize_game_info():
+        game_info = {}
+        game_info["scoreHuman"] = self.human_player.running_score
+        game_info["scoreComputer"] = self.computer_player.running_score 
+        game_info["wordsPlayedHuman"] = self.human_player.words_played
+        game_info["wordsPlayedComputer"] = self.computer_player.words_played
+        game_info["tilesLeft"] = self.bag.num_tiles_left()
+        game_info["gameEndReason"] = self.game_end_reason()
+        return game_info
  
- 
+    
+    # final dump for front end (camel case for front end Javascript convention)
+    def serialize(self):
+        wrapper = {}
+        wrapper["board"] = self.board.serialize_grid()
+        wrapper["tiles"] = self.board.serialize_tiles()
+        wrapper["rackHuman"] = self.human_player.serialize_rack()
+        wrapper["rackComputer"] = self.computer_player.serialize_rack()
+        wrapper["gameInfo"] = self.serialize_game_info()
+        wrapper["lastMove"] = self.last_move.serialize_result()
+        return wrapper 
+    
+    

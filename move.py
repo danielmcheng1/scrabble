@@ -22,7 +22,7 @@ class Move:
         
         # logs (1) if the human's attempted move was valid, and (2) the optimal move calculated by the computer 
         # game controller class uses this to update the board/racks and return to the front end 
-        self.result = {"player": player, "action": action, "success_flag": False, "detail": {}}
+        self.result = {"player": player, "action": action, "success": False, "detail": {}, "error": ""}
         
         # now attempt the move 
         if self.player.is_human():
@@ -201,7 +201,7 @@ class Move:
     '''
     def attempt_computer_move(self, player, board, bag):        
         self.find_highest_scoring_word(player.rack, board)
-        if not self.result["success_flag"]:
+        if not self.result["success"]:
             if bag.has_tiles_left():
                 log_success_exchanged(player.rack.get_n_tiles(min(bag.num_tiles_left(), rack.Rack.MAX_NUM_TILES))):
             else:
@@ -496,7 +496,7 @@ class Move:
         return self.result 
         
     def succeeded(self):
-        return self.result.get("success_flag", False)
+        return self.result.get("success", False)
         
     def get_resulting_action(self):
         return self.result.get("action", "")
@@ -516,19 +516,19 @@ class Move:
     
     ### LOGGING THE RESULT ###
     def log_error_human(self, e): 
-        result["success_flag"] = False 
+        result["success"] = False 
         result["action"] = MADE_ILLEGAL_MOVE
-        result["detail"]["error"] = "".join(e.args)
+        result["error"] = "".join(e.args)
         
     def log_success_human_placed(self, tile_word, tiles_used, score):
-        result["success_flag"] = True 
+        result["success"] = True 
         result["action"] = PLACE_TILES
         result["detail"]["word"] = "".join([tile.letter for tile in tile_word])
         result["detail"]["tiles_used"] = tiles_used 
         result["detail"]["score"] = score 
         
     def log_success_computer_placed(self, word, tile_builder):
-        result["success_flag"] = True 
+        result["success"] = True 
         result["action"] = PLACE_TILES
         
         tiles_used = tile_builder.tiles_used
@@ -541,14 +541,14 @@ class Move:
             result["detail"]["tiles_used"] = tiles_used
          
     def log_success_exchanged(self, tiles_used):
-        result["success_flag"] = True 
+        result["success"] = True 
         result["action"] = EXCHANGE_TILES
         result["detail"]["word"] = "EXCHANGED"
         result["detail"]["tiles_used"] = [] 
         result["detail"]["score"] = 0 
         
     def log_success_passed(self):
-        result["success_flag"] = True 
+        result["success"] = True 
         result["action"] = PASS
         result["detail"]["word"] = "PASSED"
         result["detail"]["tiles_used"] = [] 
@@ -558,8 +558,9 @@ class Move:
     def serialize_result(self):
         return {"player": self.result[player].serialize_type(), \
                 "action": self.result[action], \
-                "success_flag": str(self.result["success_flag"]), \
-                "detail": self.result[detail]}
+                "success": str(self.result["success"]), \
+                "detail": self.result[detail], \
+                "error": self.result[error]}
                 
         
                         

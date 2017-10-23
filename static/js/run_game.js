@@ -480,9 +480,8 @@ function parseTilesLeft(tilesLeft) {
 }
 function parseLastMove(lastMove) {
     if (lastMove!= undefined) {
-        //var detail = lastMove["action"] == "Made Illegal Move"? ": " + lastMove["detail"] : "";
         if (lastMove["action"].toUpperCase() == "MADE ILLEGAL MOVE") {
-            return "Illegal Move! " + lastMove["detail"];
+            return "Illegal Move! " + lastMove["error"];
         };
     };
     return "";
