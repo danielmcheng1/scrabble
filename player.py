@@ -1,4 +1,5 @@
 
+import rack 
 
 IS_HUMAN = True 
 IS_COMPUTER = False 
@@ -12,6 +13,12 @@ class Player:
     def is_human(self):
         return self.is_human 
     
+    def draw_tiles_at_start_of_game(self, bag):
+        self.draw_tiles(bag, rack.MAX_NUM_TILES)
+        
+    def draw_tiles_at_end_of_turn(self, bag):
+        self.draw_tiles(bag, self.rack.MAX_NUM_TILES - self.rack.get_num_tiles())
+        
     def draw_tiles(self, bag, n):
         # architecture assumes validation happened in move class 
         num_tiles_to_draw = min(bag.num_tiles_left, n)
