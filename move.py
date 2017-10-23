@@ -24,7 +24,6 @@ class Move:
         # logs (1) if the human's attempted move was valid, and (2) the optimal move calculated by the computer 
         # game controller class uses this to update the board/racks and return to the front end 
         self.result = {"player": player, "action": action, "success": False, "detail": {}, "error": ""}
-        print(player)
         # now attempt the move 
         if player.is_human:
             self.attempt_human_move(board, bag, player, action, tiles)
@@ -126,11 +125,16 @@ class Move:
             
     def validate_valid_crossword_formed(self, location, direction, letter):
         if direction == Move.HORIZONTAL:
-            cross_direction_description == "vertically"
+            cross_direction_description = "vertically"
         else:
-            cross_direction_description == "horizontally"
+            cross_direction_description = "horizontally"
         (row, col) = location.get_tuple()
-        if letter not in all_crossword_scores[direction][(row, col)].keys():
+        print("DEFINING hook  ----")
+        for spot in self.all_crossword_scores:
+            print(spot)
+        print("DEFINING crossword ----")
+        #print(self.all_crossword_scores)
+        if letter not in self.all_crossword_scores[direction][(row, col)].keys():
             raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(letter, cross_direction_description))
        
     ### OTHER SUPPORTING METHODS FOR HUMAN PLACING TILES ###
@@ -242,7 +246,7 @@ class Move:
                     log_success_computer_placed(new_tile_builder)
             else:
                 (row, col) = curr_location.get_tuple() 
-                if letter in all_crossword_scores[(row, col)].keys() and tile_builder.rack_has_letter(letter) and path.has_room():
+                if letter in self.all_crossword_scores[(row, col)].keys() and tile_builder.rack_has_letter(letter) and path.has_room():
                     new_tile_builder = tile_builder.use_tile_in_rack(letter)
                     log_success_computer_placed(new_tile_builder)
                     
@@ -266,7 +270,7 @@ class Move:
             # otherwise, try to use a tile from the rack, constrained by it forming a valid crossword 
             else:
                 (row, col) = curr_location.get_tuple() 
-                if letter in all_crossword_scores[(row, col)].keys() and tile_builder.rack_has_letter(letter):
+                if letter in self.all_crossword_scores[(row, col)].keys() and tile_builder.rack_has_letter(letter):
                     new_tile_builder = tile_builder.use_tile_in_rack(letter)
                     new_board_path = board_path.move_one_square()
                     self.get_words(node.edges[letter], new_board_path, new_tile_builder) 
@@ -294,7 +298,7 @@ class Move:
             
         # only if we hit a PREVIOUS hook spot; hence the offset must be going left/up (Move.PREFIX_OFFSET) 
         def hit_previous_hook_spot(self):
-            return curr_location != hook_location and offset == Move.PREFIX_OFFSET and curr_location.get_tuple() in all_hook_spots
+            return curr_location != hook_location and offset == Move.PREFIX_OFFSET and curr_location.get_tuple() in self.all_hook_spots
         
         # check if we've moved passed the board boundaries
         def outside_board(self):
@@ -359,13 +363,12 @@ class Move:
         return valid_hook_spots
     
     def is_valid_hook_spot(self, local_board, row, col):
-        if local_board.num_words_placed == 0:
-            if row <= board.Board.CENTER_ROW and row > board.Board.CENTER_ROW - rack.Rack.MAX_NUM_TILES:
+        if local_board.num_words_placed == 0: 
+            if row == board.Board.CENTER_ROW and col <= board.Board.CENTER_COL and col > board.Board.CENTER_COL - rack.Rack.MAX_NUM_TILES:
                 return True 
-            elif col <= board.Board.CENTER_COL and col > board.Board.CENTER_COL - rack.Rack.MAX_NUM_TILES:
+            if col == board.Board.CENTER_COL and row <= board.Board.CENTER_ROW and row > board.Board.CENTER_ROW - rack.Rack.MAX_NUM_TILES:
                 return True 
-            else:
-                return False 
+            return False 
         else:
             if this_board.has_tile(location):
                 return False 
@@ -478,8 +481,8 @@ class Move:
             total_score += letter_multiplier * tile_word[i].points 
             
             # add in scores from crossword (multipliers already included in these) 
-            if letter in all_crossword_scores[direction][(row, col)].keys():
-                crossword_scores += all_crossword_scores[direction][(row, col)][letter]
+            if letter in self.all_crossword_scores[direction][(row, col)].keys():
+                crossword_scores += self.all_crossword_scores[direction][(row, col)][letter]
         
         #final word multiplier bonus
         total_score *= word_multiplier
