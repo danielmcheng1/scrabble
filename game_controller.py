@@ -1,23 +1,31 @@
 
 import gaddag 
 import corpus
+import board 
+import bag
+import player 
+
+import move 
+import tile 
+import location 
+
 #global data structures so that this only loads once to server all requests 
 #REFACTOR check if memory loaded multiple times 
 SCRABBLE_MIN_WORD_LENGTH = corpus.get_min_word_length() 
 SCRABBLE_CORPUS = corpus.load_corpus()
-SCRABBLE_GADDAG = gaddag.read_gaddag_full(SCRABBLE_CORPUS)
 
 class GameController:
     MAX_CONSECUTIVE_TURNS_PASSED = 6
     def __init__(self):
         self.board = board.Board()
-        self.human_player = player.Player(player.IS_HUMAN)
-        self.computer_player = player.Player(player.IS_COMPUTER)
+        self.bag = bag.Bag()
+        self.human_player = player.Player(player.Player.IS_HUMAN)
+        self.computer_player = player.Player(player.Player.IS_COMPUTER)
         
         self.round_num = 1 
         self.num_consecutive_turns_passed = 0
-        self.human_player.draw_tiles_at_start_of_game()
-        self.computer_player.draw_tiles_at_start_of_game()
+        self.human_player.draw_tiles_at_start_of_game(self.bag)
+        self.computer_player.draw_tiles_at_start_of_game(self.bag)
         
         self.last_move = None
         
@@ -46,13 +54,13 @@ class GameController:
         action = last_move.get_resulting_action()
         player = last_move.get_resulting_player()
         
-        if action == move.PLACE_TILES:
+        if action == move.Move.PLACE_TILES:
             self.board.add_tiles(last_move.get_resulting_tiles_used())
             self.num_consecutive_turns_passed = 0
-        elif action == move.EXCHANGE_TILES:
+        elif action == move.Move.EXCHANGE_TILES:
             player.exchange_tiles(self.bag, last_move.get_resulting_tiles_used())
             self.num_consecutive_turns_passed = 0
-        elif action == move.PASS:
+        elif action == move.Move.PASS:
             self.num_consecutive_turns_passed += 1 
             
         player.add_new_word_played(last_move.get_resulting_word(), last_move.get_resulting_score())
@@ -61,9 +69,9 @@ class GameController:
         
     # game ends if (1) six turns have ended in passes or (2) a player has no tiles left and there are no tiles left in the bag 
     def game_end_reason(self):
-        if self.num_consecutive_turns_passed == MAX_CONSECUTIVE_TURNS_PASSED: 
-            return "Game over: {0} turns have ended in passes".format(MAX_CONSECUTIVE_TURNS_PASSED)
-        if len(self.board.bag) == 0:
+        if self.num_consecutive_turns_passed == GameController.MAX_CONSECUTIVE_TURNS_PASSED: 
+            return "Game over: {0} turns have ended in passes".format(GameController.MAX_CONSECUTIVE_TURNS_PASSED)
+        if not self.bag.has_tiles_left():
             if len(self.human_player.rack) == 0: 
                 return "Game over: {0} used up all tiles in your rack, and no tiles are left in the bag".format("You")
             if len(self.computer_player.rack) == 0:
@@ -74,7 +82,7 @@ class GameController:
         return self.game_end_reason() != ""
     
     # dumping out miscellaneous info for front end view
-    def serialize_game_info():
+    def serialize_game_info(self):
         game_info = {}
         game_info["scoreHuman"] = self.human_player.running_score
         game_info["scoreComputer"] = self.computer_player.running_score 
@@ -89,11 +97,26 @@ class GameController:
     def serialize(self):
         wrapper = {}
         wrapper["board"] = self.board.serialize_grid()
-        wrapper["tiles"] = self.board.serialize_tiles()
+        wrapper["tiles"] = self.board.serialize_tiles_placed()
         wrapper["rackHuman"] = self.human_player.serialize_rack()
         wrapper["rackComputer"] = self.computer_player.serialize_rack()
         wrapper["gameInfo"] = self.serialize_game_info()
-        wrapper["lastMove"] = self.last_move.serialize_result()
+        wrapper["lastMove"] = self.last_move.serialize_result() if self.last_move is not None else {}
         return wrapper 
     
+if __name__ == "__main__":
+    game = GameController()
+    serial = game.serialize()
+    for key in serial.keys():
+        print(key)
+        print(serial[key])
+        print("------------------------------\n")
+    global SCRABBLE_GADDAG 
+    # SCRABBLE_GADDAG = gaddag.read_gaddag_full(SCRABBLE_CORPUS)
+    game.process_human_move(move.Move.PLACE_TILES, [tile.Tile("A", game.human_player, location.Location(7, 7)), tile.Tile("T", game.human_player, location.Location(7, 8))])
     
+    serial = game.serialize()
+    for key in serial.keys():
+        print(key)
+        print(serial[key])
+        print("------------------------------\n")

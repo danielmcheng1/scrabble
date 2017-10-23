@@ -17,7 +17,6 @@ def write_gaddag_full(scrabble_corpus):
 def read_gaddag_full(scrabble_corpus):
     gaddag_filename = os.path.join(os.path.dirname(__file__), 'static', 'data', 'gaddag_full.txt')
     if os.path.isfile(gaddag_filename):
-        print('here') 
         input_file = open(gaddag_filename, 'rb') 
         return pickle.load(input_file)
     else:

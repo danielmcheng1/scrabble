@@ -1,7 +1,6 @@
 
 import location 
  
-        
 class Tile:
     SCRABBLE_SCORE_DICT = dict()
     SCRABBLE_SCORE_DICT['A'] = 1
@@ -31,10 +30,10 @@ class Tile:
     SCRABBLE_SCORE_DICT['Y'] = 4
     SCRABBLE_SCORE_DICT['Z'] = 10    
     
-    def __init__(self, letter, player, location):
+    def __init__(self, letter, player = None, location = None):
         self.letter = letter
         self.player = player
-        self.points = SCRABBLE_SCORE_DICT[letter]
+        self.points = Tile.SCRABBLE_SCORE_DICT[letter]
         self.location = location 
         
     def serialize(self):
