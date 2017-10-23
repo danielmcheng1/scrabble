@@ -462,6 +462,7 @@ class Move:
     def calc_word_score(self, tile_word, board):
         if len(tile_word) == 0: 
             return 0 
+        direction = self.get_direction(tile_word) 
         start_location = tile_word[0].location 
             
         num_tiles_placed = 0 # if 7 tiles placed, then add bingo bonus 
