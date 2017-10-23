@@ -461,10 +461,34 @@ class Move:
     def generate_all_possible_moves_for_hook_location(self, board, rack, hook_location):
         path = Path(hook_location, hook_location, HORIZONTAL, PREFIX)
         tile_context = TileContext(board, rack, [], [])
-        self.get_words(SCRABBLE_GADDAG.start_node, path, tile_context)
+        self.build_word(SCRABBLE_GADDAG.start_node, path, tile_context)
     
-    def get_words(self, node, path, tile_context):
+    def build_word(self, node, path, tile_context):
+        if path.hit_boundary or path beyond end of board:
+            return 
+            
+        # eow set to condense size of gaddag 
+        for letter in node.eow_set:
+            if board has tile:
+                if board == tile:
+                    save word
+            else:
+                if letter in crossword and letter in rack:
+                    save word 
         
+        # recurse on 
+        for letter in node.edges.keys():
+            if hook:
+                if path.move_left is empty:
+                    get_words(reverse_path) 
+            if board has tile:
+                if tile == letter:
+                    get_words()
+            else:
+                if letter in crossword and letter in rack:
+                    get_words()
+                    
+                    
     
     class TileContext:
         def __init__(self):
