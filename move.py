@@ -30,11 +30,6 @@ class Move:
         else:
             self.attempt_computer_move(board, bag, player) 
             
-    def get_result(self):
-        return self.result 
-    
-    def succeeded(self):
-        return self.result["success_flag"]
     '''
     FOR HUMAN PLAYER:
         (1) Validate that attempted move is legal (e.g. tiles placed on board form a valid word, exchanging a valid # of tiles)
@@ -196,198 +191,6 @@ class Move:
     ### HUMAN PASSING ###
     def attempt_pass(self, player):
         self.log_success_passed()
-
-        
-        
-    '''
-    SHARED METHODS BETWEEN COMPUTER AND HUMAN
-    '''
-    ### HOOK SPOT GENERATION ###
-    # hook spots: list of (row, col) where a new word could be placed
-    def pull_all_hook_spots(self, board):
-        valid_hook_spots = []
-        for row in range(board.MIN_ROW, board.MAX_ROW):
-            for col in range(board.MIN_COL, board.MAX_COL):
-                if self.is_valid_hook_spot:
-                    valid_hook_spots.append((row, col))
-                    
-        return valid_hook_spots
-    
-     def is_valid_hook_spot(self, board, location):
-        (row, col) = location.get_tuple()
-        if board.num_words_placed == 0:
-            if row <= board.CENTER_ROW and row > board.CENTER_ROW - rack.MAX_NUM_TILES:
-                return True 
-            elif col <= board.CENTER_COL and col > board.CENTER_COL - rack.MAX_NUM_TILES:
-                return True 
-            else:
-                return False 
-        else:
-            if board.has_tile(location):
-                return False 
-            else:
-                #check if there is a non-blank spot on the board adjacent to it
-                if board.has_tile(location.offset(-1, 0)) or \
-                board.has_tile(location.offset(1, 0)) or 
-                board.has_tile(location.offset(0, -1)) or 
-                board.has_tile(location.offset(0, 1)):
-                    return True 
-                else:
-                    return False 
-                    
-    ### CROSSWORD GENERATION ###
-    # crossword score dicts (one for horizontal, one for vertical): 
-        # keys = (row, col)
-        # values = dictionary of letters 
-            # keys = valid letter for that location 
-            # values = score for that crossword  
-    def pull_all_crossword_scores(self, board, rack):
-        crossword_scores_for_horizontal = {}
-        crossword_scores_for_vertical = {}
-        for row in range(board.MIN_ROW, board.MAX_ROW):
-            for col in range(board.MIN_COL, board.MAX_COL):
-                crossword_scores_for_horizontal[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), HORIZONTAL, rack) 
-                crossword_scores_for_vertical[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), VERTICAL, rack) 
-        return {HORIZONTAL: crossword_scores_for_horizontal, VERTICAL: crossword_scores_for_vertical)}
-
-    def pull_crossword_scores_at_location(self, location, orig_direction, rack):
-        #dedupe the rack so we only compute crossword  scores for minimum set of letters 
-        letters_to_score = {}
-        for letter in rack.get_set():
-            #score of negative one means crossword is invalid
-            crossword_score = self.pull_crossword_score_for_letter(letter, location, orig_direction)
-            if crossword_score != -1:
-                letters_to_score[letter] = crossword_score 
-        return letters_to_score 
-
-    # checks if there is a valid crossword orthogonal to the original tile
-        # returns a score of -1 if the input letter creates an invalid crossword, 
-        # a score of 0 if there is no crossword (so any tile is OK)
-        # and a 1+ score if there is a valid crossword
-    def pull_crossword_score_for_letter(self, letter, location, orig_direction):
-        # if a tile already exists there, no crosswords can be placed here 
-        if board.has_tile(location):
-            return -1
-            
-        # find the start location for this crossword
-        crossword_direction = orig_direction * -1
-        start_location = self.find_start_of_word(location, crossword_direction, board)
-        
-        #no crosswords were formed, so it is ok to place this tile here
-        if start_location == location:
-            return 0
-            
-        # generate the crossword 
-        tile_crossword = []
-        current_location = start_location 
-        while True:
-            if board.has_tile(location):
-                tile_crossword.append(board.get_tile(location))
-            else:
-                # create a tile for this temporary crossword letter since we finding all potential crosswords  
-                if current_location == start_location:
-                    tile_crossword.append(tile.Tile(letter, self.player, location))
-                # no more board tiles means we've hit the end of the crossword 
-                else:
-                    break 
-            if direction == HORIZONTAL:
-                location = location.offset(1, 0)
-            else:
-                location = location.offset(0, 1)
-                
-        # check if we formed a valid word 
-        try:
-            self.validate_tile_word_in_dictionary(tile_crossword)              
-        # return if we formed an invalid crossword
-        except:
-            return -1
-        
-        # calculate the score 
-        return self.calc_word_score(tile_crossword, board) 
-        
-        
-    ### SCORE CALCULATION ###
-    # calculate Scrabble score for a word (represented as a list of TILE objects)
-    def calc_word_score(self, tile_word, board):
-        if len(tile_word) == 0: 
-            return 0 
-        start_location = tile_word[0].location 
-            
-        num_tiles_placed = 0 # if 7 tiles placed, then add bingo bonus 
-        crossword_scores = 0 # to keep track of all crossword scores (avoid applying multiplier twice to these)
-        total_score = 0 # running total score
-        word_multiplier = 1 # running word multiplier (applied at the end)
-
-        for i in range(0, len(tile_word)):
-            # move to the next location on the board
-            if direction == HORIZONTAL:
-                location = start_location.offset(i, 0)
-            else:
-                location = start_location.offset(0, i)
-            (row, col) = location.get_tuple()
-            
-            # only count multipliers for new squares (i.e. multiplier only counts at the time of play) 
-            letter_multiplier = 1 
-            if not board.has_tile(location):
-                letter_multiplier = board.get_bonus_letter_multiplier(row, col)
-                word_multiplier *= board.get_bonus_word_multiplier(row, col)
-                num_tiles_placed += 1
-            total_score += letter_multiplier * tile_word[i].points 
-            
-            # add in scores from crossword (multipliers already included in these) 
-            if letter in all_crossword_scores[direction][(row, col)].keys():
-                crossword_scores += all_crossword_scores[direction][(row, col)][letter]
-        
-        #final word multiplier bonus
-        total_score *= word_multiplier
-        
-        #add in crossword scores and bingo scores
-        total_score += crossword_scores
-        if num_tiles_placed == rack.MAX_NUM_TILES:
-            total_score += BINGO_BONUS
-            
-        return total_score        
-
-    ### LOGGING THE RESULT ###
-    def log_error_human(e): 
-        result["success_flag"] = False 
-        result["action"] = MADE_ILLEGAL_MOVE
-        result["detail"]["description"] = "".join(e.args)
-        
-    def log_success_human_placed(tile_word, tiles_used, score):
-        result["success_flag"] = True 
-        result["action"] = PLACE_TILES
-        result["detail"]["word"] = "".join([tile.letter for tile in tile_word])
-        result["detail"]["tiles_used"] = tiles_used 
-        result["detail"]["score"] = score 
-        
-    def log_success_computer_placed(word, tile_builder):
-        result["success_flag"] = True 
-        result["action"] = PLACE_TILES
-        
-        tiles_used = tile_builder.tiles_used
-        score = self.calc_word_score(tiles_used)
-        word = [tile.letter for tile in tiles_used]
-        
-        if score > result["detail"].get("score", 0):
-            result["detail"]["score"] = score 
-            result["detail"]["word"] = word
-            result["detail"]["tiles_used"] = tiles_used
-         
-    def log_success_exchanged(tiles_used):
-        result["success_flag"] = True 
-        result["action"] = EXCHANGE_TILES
-        result["detail"]["word"] = "EXCHANGED"
-        result["detail"]["tiles_used"] = [] 
-        result["detail"]["score"] = 0 
-        
-    def log_success_passed():
-        result["success_flag"] = True 
-        result["action"] = PASS
-        result["detail"]["word"] = "PASSED"
-        result["detail"]["tiles_used"] = [] 
-        result["detail"]["score"] = 0
-    
         
         
     ''' 
@@ -538,4 +341,225 @@ class Move:
             return TileBuilder(self.rack, self.tile_word + [tile], self.tiles_used + [tile])
         
                
+    '''
+    SHARED METHODS BETWEEN COMPUTER AND HUMAN
+    '''
+    ### HOOK SPOT GENERATION ###
+    # hook spots: list of (row, col) where a new word could be placed
+    def pull_all_hook_spots(self, board):
+        valid_hook_spots = []
+        for row in range(board.MIN_ROW, board.MAX_ROW):
+            for col in range(board.MIN_COL, board.MAX_COL):
+                if self.is_valid_hook_spot:
+                    valid_hook_spots.append((row, col))
+                    
+        return valid_hook_spots
+    
+     def is_valid_hook_spot(self, board, location):
+        (row, col) = location.get_tuple()
+        if board.num_words_placed == 0:
+            if row <= board.CENTER_ROW and row > board.CENTER_ROW - rack.MAX_NUM_TILES:
+                return True 
+            elif col <= board.CENTER_COL and col > board.CENTER_COL - rack.MAX_NUM_TILES:
+                return True 
+            else:
+                return False 
+        else:
+            if board.has_tile(location):
+                return False 
+            else:
+                #check if there is a non-blank spot on the board adjacent to it
+                if board.has_tile(location.offset(-1, 0)) or \
+                board.has_tile(location.offset(1, 0)) or 
+                board.has_tile(location.offset(0, -1)) or 
+                board.has_tile(location.offset(0, 1)):
+                    return True 
+                else:
+                    return False 
+                    
+    ### CROSSWORD GENERATION ###
+    # crossword score dicts (one for horizontal, one for vertical): 
+        # keys = (row, col)
+        # values = dictionary of letters 
+            # keys = valid letter for that location 
+            # values = score for that crossword  
+    def pull_all_crossword_scores(self, board, rack):
+        crossword_scores_for_horizontal = {}
+        crossword_scores_for_vertical = {}
+        for row in range(board.MIN_ROW, board.MAX_ROW):
+            for col in range(board.MIN_COL, board.MAX_COL):
+                crossword_scores_for_horizontal[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), HORIZONTAL, rack) 
+                crossword_scores_for_vertical[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), VERTICAL, rack) 
+        return {HORIZONTAL: crossword_scores_for_horizontal, VERTICAL: crossword_scores_for_vertical)}
+
+    def pull_crossword_scores_at_location(self, location, orig_direction, rack):
+        #dedupe the rack so we only compute crossword  scores for minimum set of letters 
+        letters_to_score = {}
+        for letter in rack.get_set():
+            #score of negative one means crossword is invalid
+            crossword_score = self.pull_crossword_score_for_letter(letter, location, orig_direction)
+            if crossword_score != -1:
+                letters_to_score[letter] = crossword_score 
+        return letters_to_score 
+
+    # checks if there is a valid crossword orthogonal to the original tile
+        # returns a score of -1 if the input letter creates an invalid crossword, 
+        # a score of 0 if there is no crossword (so any tile is OK)
+        # and a 1+ score if there is a valid crossword
+    def pull_crossword_score_for_letter(self, letter, location, orig_direction):
+        # if a tile already exists there, no crosswords can be placed here 
+        if board.has_tile(location):
+            return -1
+            
+        # find the start location for this crossword
+        crossword_direction = orig_direction * -1
+        start_location = self.find_start_of_word(location, crossword_direction, board)
+        
+        #no crosswords were formed, so it is ok to place this tile here
+        if start_location == location:
+            return 0
+            
+        # generate the crossword 
+        tile_crossword = []
+        current_location = start_location 
+        while True:
+            if board.has_tile(location):
+                tile_crossword.append(board.get_tile(location))
+            else:
+                # create a tile for this temporary crossword letter since we finding all potential crosswords  
+                if current_location == start_location:
+                    tile_crossword.append(tile.Tile(letter, self.player, location))
+                # no more board tiles means we've hit the end of the crossword 
+                else:
+                    break 
+            if direction == HORIZONTAL:
+                location = location.offset(1, 0)
+            else:
+                location = location.offset(0, 1)
+                
+        # check if we formed a valid word 
+        try:
+            self.validate_tile_word_in_dictionary(tile_crossword)              
+        # return if we formed an invalid crossword
+        except:
+            return -1
+        
+        # calculate the score 
+        return self.calc_word_score(tile_crossword, board) 
+        
+        
+    ### SCORE CALCULATION ###
+    # calculate Scrabble score for a word (represented as a list of TILE objects)
+    def calc_word_score(self, tile_word, board):
+        if len(tile_word) == 0: 
+            return 0 
+        start_location = tile_word[0].location 
+            
+        num_tiles_placed = 0 # if 7 tiles placed, then add bingo bonus 
+        crossword_scores = 0 # to keep track of all crossword scores (avoid applying multiplier twice to these)
+        total_score = 0 # running total score
+        word_multiplier = 1 # running word multiplier (applied at the end)
+
+        for i in range(0, len(tile_word)):
+            # move to the next location on the board
+            if direction == HORIZONTAL:
+                location = start_location.offset(i, 0)
+            else:
+                location = start_location.offset(0, i)
+            (row, col) = location.get_tuple()
+            
+            # only count multipliers for new squares (i.e. multiplier only counts at the time of play) 
+            letter_multiplier = 1 
+            if not board.has_tile(location):
+                letter_multiplier = board.get_bonus_letter_multiplier(row, col)
+                word_multiplier *= board.get_bonus_word_multiplier(row, col)
+                num_tiles_placed += 1
+            total_score += letter_multiplier * tile_word[i].points 
+            
+            # add in scores from crossword (multipliers already included in these) 
+            if letter in all_crossword_scores[direction][(row, col)].keys():
+                crossword_scores += all_crossword_scores[direction][(row, col)][letter]
+        
+        #final word multiplier bonus
+        total_score *= word_multiplier
+        
+        #add in crossword scores and bingo scores
+        total_score += crossword_scores
+        if num_tiles_placed == rack.MAX_NUM_TILES:
+            total_score += BINGO_BONUS
+            
+        return total_score        
+
+    ### RETRIEVING THE RESULT ###
+    # REFACTOR: Is a dictionary the best data structure? .get methods hide this implementation so this can change if needed 
+    def get_result(self):
+        return self.result 
+        
+    def succeeded(self):
+        return self.result.get("success_flag", False)
+        
+    def get_resulting_action(self):
+        return self.result.get("action", "")
+    
+    def get_resulting_word(self):
+        return self.result.get("detail", {}).get("word", "")
+    
+    def get_resulting_tiles_used(self):
+        return self.result.get("detail", {}).get("tiles_used", [])
+    
+    def get_resulting_score(self):
+        return self.result.get("detail", {}).get("score", 0)
+    
+    def get_reuslting_player(self):
+        return self.result.get("player")
+        
+    
+    ### LOGGING THE RESULT ###
+    def log_error_human(self, e): 
+        result["success_flag"] = False 
+        result["action"] = MADE_ILLEGAL_MOVE
+        result["detail"]["error"] = "".join(e.args)
+        
+    def log_success_human_placed(self, tile_word, tiles_used, score):
+        result["success_flag"] = True 
+        result["action"] = PLACE_TILES
+        result["detail"]["word"] = "".join([tile.letter for tile in tile_word])
+        result["detail"]["tiles_used"] = tiles_used 
+        result["detail"]["score"] = score 
+        
+    def log_success_computer_placed(self, word, tile_builder):
+        result["success_flag"] = True 
+        result["action"] = PLACE_TILES
+        
+        tiles_used = tile_builder.tiles_used
+        score = self.calc_word_score(tiles_used)
+        word = [tile.letter for tile in tiles_used]
+        
+        if score > result["detail"].get("score", 0):
+            result["detail"]["score"] = score 
+            result["detail"]["word"] = word
+            result["detail"]["tiles_used"] = tiles_used
+         
+    def log_success_exchanged(self, tiles_used):
+        result["success_flag"] = True 
+        result["action"] = EXCHANGE_TILES
+        result["detail"]["word"] = "EXCHANGED"
+        result["detail"]["tiles_used"] = [] 
+        result["detail"]["score"] = 0 
+        
+    def log_success_passed(self):
+        result["success_flag"] = True 
+        result["action"] = PASS
+        result["detail"]["word"] = "PASSED"
+        result["detail"]["tiles_used"] = [] 
+        result["detail"]["score"] = 0
+        
+        
+    def serialize_result(self):
+        return {"player": self.result[player].serialize_type(), \
+                "action": self.result[action], \
+                "success_flag": str(self.result["success_flag"]), \
+                "detail": self.result[detail]}
+                
+        
                         

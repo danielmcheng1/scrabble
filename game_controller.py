@@ -19,7 +19,7 @@ class GameController:
         self.human_player.draw_tiles_at_start_of_game()
         self.computer_player.draw_tiles_at_start_of_game()
         
-        self.last_move = {}
+        self.last_move = None
         
     def process_human_move(self, action, tiles):
         # do not process further if the game has already ended 
@@ -27,22 +27,31 @@ class GameController:
             return self.serialize()
         
         # validate the attempted human move
-        human_move = move.Move(self.board, self.bag, self.human_player, action, tiles)
-        self.last_move = human_move.get_result()
-        
-        if human_move.succeeded():
+        self.last_move = move.Move(self.board, self.bag, self.human_player, action, tiles)
+        if self.last_move.succeeded():
             # implement the attempted human move 
-            self.realize_move(last_move) 
+            self.implement_last_move() 
             
             # now find the optimal computer move is 
-            computer_move = move.Move(self.board, self.bag, self.compute_player)
+            self.last_move = move.Move(self.board, self.bag, self.compute_player)
             
             # and implement that computer move 
-            self.last_move = computer_move.get_result() 
+            self.implement_last_move()
         
         # pass the result back to the front end 
         return self.serialize()
+    def implement_last_move(self):
+        action = self.last_move.get_resulting_action()
+        if action == move.PLACE_TILES:
+            self.board.add_tiles(self.last_move.get_resulting_tiles_used)
+            self.num_consecutive_turns_passed = 0
+        elif action == move.EXCHANGE_TILES:
+            self.last_move.get_resulting_player().exchange_tiles(self.bag, self.last_move.get_resulting_tiles_used)
+            self.num_consecutive_turns_passed = 0
+        elif action == move.PASS:
+            self.num_consecutive_turns_passed += 1 
             
+        log_words   
     def serialize(self):
         self.board.serialize_grid()
         self.board.serialize_tiles()
