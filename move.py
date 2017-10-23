@@ -129,11 +129,6 @@ class Move:
         else:
             cross_direction_description = "horizontally"
         (row, col) = location.get_tuple()
-        print("DEFINING hook  ----")
-        for spot in self.all_crossword_scores:
-            print(spot)
-        print("DEFINING crossword ----")
-        #print(self.all_crossword_scores)
         if letter not in self.all_crossword_scores[direction][(row, col)].keys():
             raise ValueError("Your placed tile {0} fails to form a valid crossword going {1}".format(letter, cross_direction_description))
        
@@ -399,7 +394,7 @@ class Move:
     def pull_crossword_scores_at_location(self, board, location, orig_direction, rack):
         #dedupe the rack so we only compute crossword  scores for minimum set of letters 
         letters_to_score = {}
-        for letter in rack.get_set():
+        for letter in rack.get_letter_set():
             #score of negative one means crossword is invalid
             crossword_score = self.pull_crossword_score_for_letter(board, letter, location, orig_direction)
             if crossword_score != -1:
@@ -522,7 +517,10 @@ class Move:
     def log_error_human(self, e): 
         self.result["success"] = False 
         self.result["action"] = Move.MADE_ILLEGAL_MOVE
-        self.result["error"] = "".join(e.args)
+        if type(e) is str:
+            self.result["error"] = e 
+        else:
+            self.result["error"] = "".join(e.args)
         
     def log_success_human_placed(self, tile_word, tiles_used, score):
         self.result["success"] = True 
@@ -565,6 +563,13 @@ class Move:
                 "success": str(self.result["success"]), \
                 "detail": self.result["detail"], \
                 "error": self.result["error"]}
-                
+    
+    # printing functions for debugging 
+    def print_all_crossword_scores(self):
+        print("\nPrinting all_crossword_scores")
+        for direction in self.all_crossword_scores:
+            for (x, y) in self.all_crossword_scores[direction]:
+                print(str((x, y)) + " --> " + str(self.all_crossword_scores[direction][(x, y)]))
+        print("-------------------------------")
         
                         

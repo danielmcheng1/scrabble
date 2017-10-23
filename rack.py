@@ -9,8 +9,8 @@ class Rack:
     def copy_rack(self):
         return Rack(self.tiles[:])
     
-    def get_set(self):
-        return set(self.tiles) 
+    def get_letter_set(self):
+        return set([tile.letter for tile in self.tiles]) 
 
     def get_n_tiles(self, n):
         return self.tiles[0:n]
@@ -26,6 +26,10 @@ class Rack:
     
     def add_tile(self, tile):
         self.tiles.append(tile)
+    def remove_one_tile_random(self):
+        removed_tile = self.tiles[-1]
+        self.tiles = self.tiles[:-1]
+        return removed_tile
         
     def remove_one_tile_with_letter(self, letter):
         new_tiles = []

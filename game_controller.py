@@ -113,7 +113,12 @@ if __name__ == "__main__":
         print("------------------------------\n")
     global SCRABBLE_GADDAG 
     # SCRABBLE_GADDAG = gaddag.read_gaddag_full(SCRABBLE_CORPUS)
-    game.process_human_move(move.Move.PLACE_TILES, [tile.Tile("A", game.human_player, location.Location(7, 7)), tile.Tile("T", game.human_player, location.Location(7, 8))])
+    
+    game.human_player.rack.remove_one_tile_random()
+    game.human_player.rack.add_tile(tile.Tile("A", game.human_player, location.Location(7, 7)))
+    game.human_player.rack.add_tile(tile.Tile("T", game.human_player, location.Location(7, 8)))
+    print(game.human_player.rack.serialize())
+    game.process_human_move(move.Move.PLACE_TILES, game.human_player.rack.tiles[-2:])
     
     serial = game.serialize()
     for key in serial.keys():
