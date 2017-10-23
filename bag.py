@@ -12,7 +12,7 @@ class Bag:
         random.shuffle(scrabble_bag)
         return scrabble_bag
         
-    def count_tiles_left(self):
+    def num_tiles_left(self):
         return len(scrabble_bag) 
         
     def has_tiles_left(self):
