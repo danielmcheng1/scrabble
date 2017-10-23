@@ -1,6 +1,8 @@
 
 import tile  
-import location     
+import location    
+import board 
+ 
 class Move: 
     PLACE_TILES = "Place tiles"
     EXCHANGE_TILES = "Exchange tiles"
@@ -8,8 +10,8 @@ class Move:
     MADE_ILLEGAL_MOVE = "Made illegal move"
     HORIZONTAL = 1
     VERTICAL = -1
-    PREFIX = -1
-    SUFFIX = 1
+    PREFIX_OFFSET = -1
+    SUFFIX_OFFSET = 1
     BINGO_BONUS = 50
     
     def __init__(self, board, bag, player, action = None, tiles = None):
@@ -254,24 +256,18 @@ class Move:
         result["detail"]["tiles_used"] = tiles_used 
         result["detail"]["score"] = score 
         
-    def log_success_computer_placed(word, context):
+    def log_success_computer_placed(word, tile_builder):
         result["success_flag"] = True 
         result["action"] = PLACE_TILES
-        tiles_used = context.tiles_used  
-        word = context.word 
-        score = self.calc_word_score(tiles_
+        
+        tiles_used = tile_builder.tiles_used
+        score = self.calc_word_score(tiles_used)
+        word = [tile.letter for tile in tiles_used]
+        
         if score > result["detail"].get("score", 0):
             result["detail"]["score"] = score 
             result["detail"]["word"] = word
-            result["detail"]["tiles_used"] = tiles_used 
-            
-                  self.location = location 
-            self.generating_prefix = generating_prefix
-            self.rack = rack.copy_rack()
-            self.word = word[:] if word is not None else []
-            self.letter = letter if letter is not None else ""
-            self.node = node if node is not None else SCRABBLE_APPRENTICE_GADDAG.start_node 
-            self.tiles_placed = tiles_placed[:] if tiles_placed is not None else []
+            result["detail"]["tiles_used"] = tiles_used
          
     def log_success_exchanged(tiles_used):
         result["success_flag"] = True 
@@ -459,40 +455,71 @@ class Move:
             self.generate_all_possible_moves_for_hook_location(board, rack, location.Location(hook_row, hook_col))
     
     def generate_all_possible_moves_for_hook_location(self, board, rack, hook_location):
-        path = Path(hook_location, hook_location, HORIZONTAL, PREFIX)
-        tile_context = TileContext(board, rack, [], [])
-        self.build_word(SCRABBLE_GADDAG.start_node, path, tile_context)
+        path_on_board = Path(hook_location, hook_location, HORIZONTAL, PREFIX_OFFSET)
+        tile_builder = TileBuilder(board, rack, [], [])
+        self.build_word(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
     
-    def build_word(self, node, path, tile_context):
-        if path.hit_boundary or path beyond end of board:
+    def build_word(self, node, board_path, tile_builder):
+        if board_path.hit_previous_hook_spot() or board_path.outside_board():
             return 
             
-        # eow set to condense size of gaddag 
+        curr_location = board_path.curr_location
+        
+        # first check if we've completed a word 
         for letter in node.eow_set:
-            if board has tile:
-                if board == tile:
-                    save word
+            if board_path.has_tile(curr_location)
+                curr_tile = board_path.get_tile(curr_location)
+                if board_path.curr_tile.letter == letter:
+                    tile_builder.save_
             else:
                 if letter in crossword and letter in rack:
-                    save word 
-        
+                    save word         
         # recurse on 
         for letter in node.edges.keys():
-            if hook:
-                if path.move_left is empty:
-                    get_words(reverse_path) 
-            if board has tile:
-                if tile == letter:
-                    get_words()
+            # check if we need to reverse from prefix formation to suffix formation 
+            if letter === gaddag.GADDAG_HOOK:
+                # before starting the suffix, check that there are no tiles before the first tile in our word (which would imply this is not actually the first tile) 
+                if board_path.has_room_before():
+                    new_board_path = board_path.flip_direction()
+                    self.get_words(node.edges[letter], new_board_path, tile_builder) 
+            
+            # now try to use a tile already on the board
+            elif board_path.has_tile(curr_location):
+                curr_tile = board_path.get_tile(curr_location)
+                if board_path.curr_tile.letter == letter:
+                    new_tile_builder = tile_builder.add_tile(curr_tile)
+                    new_board_path = board_path.move_one_square()
+                    self.get_words(node.edges[letter], new_board_path, new_tile_builder) 
+            
+            # otherwise, try to use a tile from the rack, constrained by it forming a valid crossword 
             else:
-                if letter in crossword and letter in rack:
-                    get_words()
+                (row, col) = curr_location.get_tuple() 
+                if letter in all_crossword_scores[(row, col)].keys() and tile_builder.rack_has_letter(letter):
+                    new_tile_builder = tile_builder.use_tile_in_rack(letter)
+                    new_board_path = board_path.move_one_square()
+                    self.get_words(node.edges[letter], new_board_path, new_tile_builder) 
                     
                     
-    
-    class TileContext:
-        def __init__(self):
-            self.board = board 
+    class Path:
+        # direction = {HORIZONTAL, VERTICAL} -- i.e. should I navigate along the row or along the columns 
+        # offset = {PREFIX_OFFSET, SUFFIX_OFFSET} -- i.e. am I moving left/up (building up the prefix) or right/down (building up the suffix) 
+        def __init__(self, board, hook_location, curr_location, direction, offset):
+        
+        # only if we hit a PREVIOUS hook spot; hence the offset must be going left/up (PREFIX_OFFSET) 
+        def hit_previous_hook_spot(self):
+            return curr_location != hook_location and offset == PREFIX_OFFSET and curr_location.get_tuple() in all_hook_spots
+        
+        def outside_board(self):
+            (row, col) = curr_location.get_tuple()
+            return row < board.MIN_ROW or row >= board.MAX_ROW or col < board.MIN_COL or col >= board.MAX_COL 
+            
+        def has_room_before(self):
+            if self.direction == HORIZONTAL:
+                return self.board.has_tile(self.curr_location.offset(-1, 0))
+            return self.board.has_tile(self.curr_location.offset(0, -1))
+            
+    class TileBuilder:
+        def __init__(self, rack, tile_word, tiles_used):
             self.rack = rack 
             self.tile_word = 
             self.tiles_used
@@ -616,7 +643,7 @@ class Move:
                                     valid_crossword_score_dict, indent + GEN_MOVES_PRINT_INDENT)
                 #if the next node leads to a hook, then we have to reverse 
                 #(unless we're bumping up against another tile on the board)
-                if scrabble_apprentice_gaddag.GADDAG_HOOK in curr_node.edges.keys() and \
+                if gaddag.GADDAG_HOOK in curr_node.edges.keys() and \
                 not self.ends_are_filled(curr_offset, hook_row, hook_col, direction, new_word, FRONT_END):
                     curr_node = curr_node.edges[scrabble_apprentice_gaddag.GADDAG_HOOK]
                     self.generate_moves_for_hook_spot(curr_node, curr_rack, new_word,
