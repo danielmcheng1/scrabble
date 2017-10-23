@@ -8,6 +8,8 @@ class Move:
     MADE_ILLEGAL_MOVE = "Made illegal move"
     HORIZONTAL = 1
     VERTICAL = -1
+    PREFIX = -1
+    SUFFIX = 1
     BINGO_BONUS = 50
     
     def __init__(self, board, bag, player, action = None, tiles = None):
@@ -430,7 +432,46 @@ class Move:
         
         
         
+    #################
+    def attempt_computer_move(self, player, board):        
+        self.generate_all_possible_moves(player.rack, board)
+
+    def generate_all_possible_moves(self, rack, board):
+        # iterate over all possible hook spots, building up words going both HORIZONTALLY and VERTICALLY 
+        # maintain pointer to the previous hook spot so that we do not recalculate possible words for that spot--when moving back from the current spot 
+        boundary = MIN_COL
+        for (hook_row, hook_col) in valid_hook_spots:
+            constraint = Constraint(hook_row, hook_col, HORIZONTAL, boundary)
+            context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
+            
+            self.generate_moves_for_hook_spot(board, constraint, context)
+            boundary = hook_col + 1
+       
+        boundary = MIN_ROW
+        for (hook_row, hook_col) in valid_hook_spots:
+            constraint = Constraint(hook_row, hook_col, VERTICAL, boundary)
+            context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
+            
+            self.generate_moves_for_hook_spot(board, constraint, context)
+            boundary = hook_row + 1
+    def generate_all_possible_moves(self, board, rack):
+        for (hook_row, hook_col) in valid_hook_spots:
+            self.generate_all_possible_moves_for_hook_location(board, rack, location.Location(hook_row, hook_col))
+    
+    def generate_all_possible_moves_for_hook_location(self, board, rack, hook_location):
+        path = Path(hook_location, hook_location, HORIZONTAL, PREFIX)
+        tile_context = TileContext(board, rack, [], [])
+        self.get_words(SCRABBLE_GADDAG.start_node, path, tile_context)
+    
+    def get_words(self, node, path, tile_context):
         
+    
+    class TileContext:
+        def __init__(self):
+            self.board = board 
+            self.rack = rack 
+            self.tile_word = 
+            self.tiles_used
 
             
                     
@@ -484,33 +525,6 @@ class Move:
             self.hook_row = hook_row 
             self.hook_col = hook_col 
             self.direction = direction 
-            self.boundary = boundary 
-        
-    def attempt_computer_move(self, player, board):        
-        self.generate_all_possible_moves(player.rack, board)
-        if self.comp_max_word:
-            self.place_word(self.comp_max_row, self.comp_max_col, self.comp_max_direction, self.comp_max_word, player)
-        return (self.comp_max_score, self.comp_max_word)
-
-    def generate_all_possible_moves(self, rack, board):
-        # iterate over all possible hook spots, building up words going both HORIZONTALLY and VERTICALLY 
-        # maintain pointer to the previous hook spot so that we do not recalculate possible words for that spot--when moving back from the current spot 
-        boundary = MIN_COL
-        for (hook_row, hook_col) in valid_hook_spots:
-            constraint = Constraint(hook_row, hook_col, HORIZONTAL, boundary)
-            context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
-            
-            self.generate_moves_for_hook_spot(board, constraint, context)
-            boundary = hook_col + 1
-       
-        boundary = MIN_ROW
-        for (hook_row, hook_col) in valid_hook_spots:
-            constraint = Constraint(hook_row, hook_col, VERTICAL, boundary)
-            context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
-            
-            self.generate_moves_for_hook_spot(board, constraint, context)
-            boundary = hook_row + 1
-         
     def generate_moves_for_hook_spot(self, board, constraint, context):  
         if context.hit_boundary(constraint):
             return
