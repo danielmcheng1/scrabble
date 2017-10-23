@@ -50,7 +50,7 @@ class Move:
             self.validate_nonzero_tiles(sorted_tiles)
             self.validate_in_one_row_or_column(sorted_tiles)
             self.validate_tiles_hook_onto_existing(sorted_tiles)
-        except as e:
+        except e:
             self.log_error_human(e)
             return 
             
@@ -76,7 +76,7 @@ class Move:
             else:
                 try:
                     self.validate_valid_crossword_formed(location, direction, sorted_tiles[tile_index].letter)
-                except as e:
+                except e:
                     self.log_error_human(e)
                     return 
                 tile_word.append(sorted_tiles[tile_index]) 
@@ -85,13 +85,13 @@ class Move:
             # now increment to the next spot 
             if direction == HORIZONTAL:
                 current_location = current_location.offset(-1, 0)
-            else 
+            else:
                 current_location = current_location.offset(0, -1)
         
         # validate the full word now that we've walked down the board 
         try:
             self.validate_tile_word_in_dictionary(tile_word)
-        except as e:
+        except e:
             self.log_error_human(e)
             return 
         
@@ -167,7 +167,7 @@ class Move:
         while board.has_tile(location):
             if direction == HORIZONTAL:
                 start_location = start_location.offset(-1, 0)
-            else 
+            else:
                 start_location = start_location.offset(0, -1)
         return start_location
     
@@ -203,7 +203,8 @@ class Move:
         self.find_highest_scoring_word(player.rack, board)
         if not self.result["success"]:
             if bag.has_tiles_left():
-                log_success_exchanged(player.rack.get_n_tiles(min(bag.num_tiles_left(), rack.Rack.MAX_NUM_TILES))):
+                num_tiles_to_exchange = min(bag.num_tiles_left(), rack.Rack.MAX_NUM_TILES)
+                log_success_exchanged(player.rack.get_n_tiles(num_tiles_to_exchange))
             else:
                 log_success_passed()
                 
@@ -246,7 +247,7 @@ class Move:
         # now recurse on for all other edges going out from this node
         for letter in node.edges.keys():
             # check if we need to reverse from prefix formation to suffix formation 
-            if letter === gaddag.GADDAG_HOOK:
+            if letter == gaddag.GADDAG_HOOK:
                 # before starting the suffix, check that there are no tiles before the first tile in our word (which would imply this is not actually the first tile) 
                 if path.has_room():
                     new_path = path.switch_to_suffix()
@@ -355,7 +356,7 @@ class Move:
                     
         return valid_hook_spots
     
-     def is_valid_hook_spot(self, board, location):
+    def is_valid_hook_spot(self, board, location):
         (row, col) = location.get_tuple()
         if board.num_words_placed == 0:
             if row <= board.CENTER_ROW and row > board.CENTER_ROW - rack.MAX_NUM_TILES:
@@ -369,13 +370,11 @@ class Move:
                 return False 
             else:
                 #check if there is a non-blank spot on the board adjacent to it
-                if board.has_tile(location.offset(-1, 0)) or \
-                board.has_tile(location.offset(1, 0)) or 
-                board.has_tile(location.offset(0, -1)) or 
-                board.has_tile(location.offset(0, 1)):
+                if board.has_tile(location.offset(-1, 0)) or board.has_tile(location.offset(1, 0)):
                     return True 
-                else:
-                    return False 
+                if board.has_tile(location.offset(0, -1)) or board.has_tile(location.offset(0, 1)):
+                    return True 
+                return False 
                     
     ### CROSSWORD GENERATION ###
     # crossword score dicts (one for horizontal, one for vertical): 
@@ -390,7 +389,7 @@ class Move:
             for col in range(board.MIN_COL, board.MAX_COL):
                 crossword_scores_for_horizontal[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), HORIZONTAL, rack) 
                 crossword_scores_for_vertical[(row, col)] = pull_crossword_scores_at_location(location.Location(row, col), VERTICAL, rack) 
-        return {HORIZONTAL: crossword_scores_for_horizontal, VERTICAL: crossword_scores_for_vertical)}
+        return {HORIZONTAL: crossword_scores_for_horizontal, VERTICAL: crossword_scores_for_vertical}
 
     def pull_crossword_scores_at_location(self, location, orig_direction, rack):
         #dedupe the rack so we only compute crossword  scores for minimum set of letters 
@@ -543,14 +542,14 @@ class Move:
     def log_success_exchanged(self, tiles_used):
         result["success"] = True 
         result["action"] = EXCHANGE_TILES
-        result["detail"]["word"] = "EXCHANGED"
-        result["detail"]["tiles_used"] = [] 
+        result["detail"]["word"] = "EXCHANGED TILES"
+        result["detail"]["tiles_used"] = tiles_used 
         result["detail"]["score"] = 0 
         
     def log_success_passed(self):
         result["success"] = True 
         result["action"] = PASS
-        result["detail"]["word"] = "PASSED"
+        result["detail"]["word"] = "PASSED TURN"
         result["detail"]["tiles_used"] = [] 
         result["detail"]["score"] = 0
         

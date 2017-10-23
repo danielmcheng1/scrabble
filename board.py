@@ -71,7 +71,7 @@ class Board:
             return 2
         return 1
     
-    def get_bonus_letter_multiplier(self, row, col);
+    def get_bonus_letter_multiplier(self, row, col):
         if self.get_bonus() == TRIPLE_LETTER:
             return 3
         if self.get_bonus() == DOUBLE_LETTER:

@@ -1,11 +1,11 @@
 
 import gaddag 
 import corpus
-#global gaddag so that this only loads once to server all requests 
+#global data structures so that this only loads once to server all requests 
 #REFACTOR check if memory loaded multiple times 
-SCRABBLE_GADDAG = gaddag.read_gaddag_full()
 SCRABBLE_MIN_WORD_LENGTH = corpus.get_min_word_length() 
-SCRABBLE_CORPUS  = corpus.load_scrabble_corpus()
+SCRABBLE_CORPUS = corpus.load_corpus()
+SCRABBLE_GADDAG = gaddag.read_gaddag_full(SCRABBLE_CORPUS)
 
 class GameController:
     MAX_CONSECUTIVE_TURNS_PASSED = 6

@@ -1,8 +1,4 @@
 
-#Gaddag naive implementation: 1820 megabytes for scrabble_gaddag
-#partially compressed suffixes for a given word and eow letter sets: 854 mb!
-#Execution time: 20-30 seconds for initial load
-    
 #global vars solely for printing (not for identifying)
 GADDAG_PRINT_EOW = "."
 GADDAG_PRINT_INDENT = "    "  

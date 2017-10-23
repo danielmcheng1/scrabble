@@ -1,40 +1,36 @@
 import os 
 import _pickle as pickle
 import string 
+import gaddag_node 
 
-def write_gaddags_by_letter(scrabble_corpus):
-    scrabble_corpus_by_letter = {letter: [] for letter in string.ascii_uppercase}
-    for word in scrabble_corpus:
-        scrabble_corpus_by_letter[word[0]].append(word)
-    for letter in scrabble_corpus_by_letter:
-        write_gaddag_for_one_letter(letter, scrabble_corpus_by_letter)
-        
-def write_gaddag_for_one_letter(letter, scrabble_corpus_by_letter):
-    output_file = open(os.path.join(os.path.dirname( __file__ ), 'static', 'data', 'gaddag_' + letter + '.txt'), 'wb')
-    scrabble_gaddag = gaddag(scrabble_corpus_by_letter[letter], output_file)
-    output_file.close()
-    
-def read_gaddag_by_letter(letter):
-    input_file = open(os.path.join(os.path.dirname( __file__ ), 'static', 'data', 'gaddag_' + letter + '.txt'), 'rb')
-    return pickle.load(input_file)
+# original implementation: 1820 megabytes for loading official Scrabbl dictionary into gaddag (178 k words)
+# compressed suffixes for a given word and added eow letter sets: 854 mb!
 
+# writing and reading gaddag (precompute/preload ahead of time) 
 def write_gaddag_full(scrabble_corpus):
     output_file = open(os.path.join(os.path.dirname( __file__ ), 'static', 'data', 'gaddag_full.txt'), 'wb')
     scrabble_gaddag = gaddag(scrabble_corpus, output_file)
     output_file.close()
+    return scrabble_gaddag 
 
-def read_gaddag_full():
-    input_file = open(os.path.join(os.path.dirname(__file__), 'static', 'data', 'gaddag_full.txt'), 'rb') 
-    return pickle.load(input_file)
+# pass in corpus in case we need to create the gaddag
+def read_gaddag_full(scrabble_corpus):
+    gaddag_filename = os.path.join(os.path.dirname(__file__), 'static', 'data', 'gaddag_full.txt')
+    if os.path.isfile(gaddag_filename):
+        print('here') 
+        input_file = open(gaddag_filename, 'rb') 
+        return pickle.load(input_file)
+    else:
+        return write_gaddag_full(scrabble_corpus)
+    
     
    
-#the hook represents where the prefix ends (up to and including the intersection tile)
-GADDAG_HOOK = "@" 
-
-            
+# the hook represents where the prefix ends (up to and including the intersection tile) 
+# so this is the point at which we flip from prefix building to suffix building
+GADDAG_HOOK = "@"             
 class gaddag:
     def __init__(self, corpus, output_file = None):
-        self.start_node = gaddag_node()
+        self.start_node = gaddag_node.gaddag_node()
         self.make_gaddag(corpus, output_file)
         
     def make_gaddag(self, corpus, output_file = None):
