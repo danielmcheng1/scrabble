@@ -38,4 +38,9 @@ class Tile:
         self.location = location 
         
     def serialize(self):
-        return {'letter': self.letter, 'points': self.points, 'player': self.player.serialize_type(), 'location': self.location.serialize()}
+        # player can be None if this is a tile in the bag 
+        # location can be None if tile has not been placed on the board 
+        return {'letter': self.letter, \
+                'points': self.points, \
+                'player': "" if self.player is None else self.player.serialize_type(), \
+                'location': "" if self.location is None else self.location.serialize()}

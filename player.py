@@ -39,5 +39,8 @@ class Player:
             return "Human"
         else:
             return "Computer"
-            
+    
+    def serialize_rack(self):
+        return self.rack.serialize()
+        
             

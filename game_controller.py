@@ -16,7 +16,9 @@ class GameController:
         
         self.round_num = 1 
         self.num_consecutive_turns_passed = 0
-        self.draw_tiles_end_of_turn(player, RACK_MAX_NUM_TILES)
+        self.human_player.draw_tiles_at_start_of_game()
+        self.computer_player.draw_tiles_at_start_of_game()
+        
         self.last_move = {}
         
     def process_human_move(self, action, tiles):
@@ -26,20 +28,60 @@ class GameController:
         
         # validate the attempted human move
         human_move = move.Move(self.board, self.bag, self.human_player, action, tiles)
+        self.last_move = human_move.get_result()
+        
         if human_move.succeeded():
             # implement the attempted human move 
-            last_move = human_move.get_result()
             self.realize_move(last_move) 
             
             # now find the optimal computer move is 
             computer_move = move.Move(self.board, self.bag, self.compute_player)
             
             # and implement that computer move 
-            last_move = computer_move.get_result() 
+            self.last_move = computer_move.get_result() 
         
         # pass the result back to the front end 
         return self.serialize()
             
+    def serialize(self):
+        self.board.serialize_grid()
+        self.board.serialize_tiles()
+        self.human_player.serialize_rack()
+        self.computer_player.serialize_rack()
+        self.last_move 
+    scrabble_game_play_wrapper = {"board": [[map_cell_to_bonus_view(scrabble_board.board[row][col]) for col in range(MAX_COL)] for row in range(MAX_ROW)], \
+                              "tiles": [[map_cell_to_tile_view(scrabble_board.board[row][col], map_cell_to_player_view(row, col, scrabble_board), scrabble_score_dict) for col in range(MAX_COL)] for row in range(MAX_ROW)], \
+                              "rackHuman": map_rack_to_tile_view(human_player.rack, "Human", scrabble_score_dict),   \
+                              "rackComputer": map_rack_to_tile_view(computer_player.rack, "Computer", scrabble_score_dict), \
+                              "gameInfo": {"scoreHuman": human_player.running_score, "scoreComputer": computer_player.running_score,
+                                           "wordsPlayedHuman": human_player.words_played, "wordsPlayedComputer": computer_player.words_played,
+                                           "tilesLeft": len(scrabble_board.bag),
+                                           "gameEndReason": scrabble_game_play.game_end_reason()}, \
+                              "lastMove": last_move_to_send
+                              }
+                                      
+        def wrapper_end_turn(player, word, score, game_play):
+            player.words_played.append({"word": word, "score": score})
+            player.running_score += score   
+            game_play.draw_tiles_end_of_turn(player, RACK_MAX_NUM_TILES - len(player.rack)) 
+            
+        def increment_turns_passed(scrabble_game_play, move):
+            if move["action"] == "Passed":
+                scrabble_game_play.num_turns_passed += 1
+            else:
+                scrabble_game_play.num_turns_passed = 0 
+    def get_game_info():
+        round_num
+        scores by player 
+        words played by player 
+        count_tiles_left
+        last move
+        game end reason
+        "gameInfo": {"scoreHuman": human_player.running_score, "scoreComputer": computer_player.running_score,
+                                   "wordsPlayedHuman": human_player.words_played, "wordsPlayedComputer": computer_player.words_played,
+                                   "tilesLeft": len(scrabble_board.bag),
+                                   "gameEndReason": scrabble_game_play.game_end_reason()}
+    
     def game_has_ended(self):
         return self.game_end_reason() != ""
     
@@ -53,19 +95,6 @@ class GameController:
             if len(self.computer_player.rack) == 0:
                 return "Game over: {0} used up all tiles in its rack, and no tiles are left in the bag".format("Computer")
         return ""
-    
-    
-    def get_game_info():
-        round_num
-        scores by player 
-        words played by player 
-        count_tiles_left
-        last move
-        game end reason
-        "gameInfo": {"scoreHuman": human_player.running_score, "scoreComputer": computer_player.running_score,
-                                   "wordsPlayedHuman": human_player.words_played, "wordsPlayedComputer": computer_player.words_played,
-                                   "tilesLeft": len(scrabble_board.bag),
-                                   "gameEndReason": scrabble_game_play.game_end_reason()}
     
  
  

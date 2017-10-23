@@ -5,7 +5,7 @@ class Bag:
         self.bag = []
         scrabble_freq_dict = load_scrabble_freq_dict()
         for letter in scrabble_freq_dict.keys():
-            self.bag = self.bag + [tile.Tile(letter, None, None)] * scrabble_freq_dict[letter]
+            self.bag = self.bag + [tile.Tile(letter)] * scrabble_freq_dict[letter]
         self.shuffle_bag()
         
     def shuffle_bag(self):
