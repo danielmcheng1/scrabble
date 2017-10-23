@@ -25,6 +25,7 @@ class Move:
         # game controller class uses this to update the board/racks and return to the front end 
         self.result = {"player": player, "action": action, "success": False, "detail": {}, "error": ""}
         # now attempt the move 
+        print(tiles) 
         if player.is_human:
             self.attempt_human_move(board, bag, player, action, tiles)
         else:
