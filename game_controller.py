@@ -10,9 +10,7 @@ import tile
 import location 
 
 #global data structures so that this only loads once to server all requests 
-#REFACTOR check if memory loaded multiple times 
-SCRABBLE_MIN_WORD_LENGTH = corpus.get_min_word_length() 
-SCRABBLE_CORPUS = corpus.load_corpus()
+#REFACTOR check if memory loaded multiple times  
 
 class GameController:
     MAX_CONSECUTIVE_TURNS_PASSED = 6

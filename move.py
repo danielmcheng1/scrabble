@@ -3,6 +3,7 @@ import tile
 import location    
 import board 
 import rack 
+import gaddag 
 
 # REFACTOR errors? at least not value error....
 class Move: 
@@ -71,15 +72,15 @@ class Move:
         tile_index = 0 
         tile_word = [] 
         while True:
+            # print("Location: {0}, tile_index: {1}, tile_location: {2}".format(current_location, tile_index, sorted_tiles[tile_index].location))
             # existing board tile 
-            print(current_location)
             if board.has_tile(current_location):
                 tile_word.append(board.get_tile(current_location)) 
             # we've used all the tiles placed by the player 
             elif tile_index == num_tiles:
                 break  
             # player did not place anything here 
-            elif sorted_tiles[tile_index].location != start_location:
+            elif sorted_tiles[tile_index].location != current_location:
                 self.log_error_human("Placed tiles must be connected to each other") 
                 return 
             # player placed a tile here 
@@ -115,7 +116,7 @@ class Move:
         
     def validate_word_in_dictionary(self, word):
         letter_representation = "".join(word)
-        if letter_representation not in self.scrabble_corpus:
+        if letter_representation not in gaddag.SCRABBLE_CORPUS:
             raise ValueError("{0} is not a valid word in the TWL06 Scrabble dictionary".format(letter_representation))
         
     def validate_nonzero_tiles(self, tiles):

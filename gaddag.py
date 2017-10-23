@@ -2,25 +2,27 @@ import os
 import _pickle as pickle
 import string 
 import gaddag_node 
+import corpus 
 
+SCRABBLE_CORPUS = corpus.load_corpus()
 # original implementation: 1820 megabytes for loading official Scrabbl dictionary into gaddag (178 k words)
 # compressed suffixes for a given word and added eow letter sets: 854 mb!
 
 # writing and reading gaddag (precompute/preload ahead of time) 
-def write_gaddag_full(scrabble_corpus):
+def write_gaddag_full():
     output_file = open(os.path.join(os.path.dirname( __file__ ), 'static', 'data', 'gaddag_full.txt'), 'wb')
-    scrabble_gaddag = gaddag(scrabble_corpus, output_file)
+    scrabble_gaddag = gaddag(SCRABBLE_CORPUS, output_file)
     output_file.close()
     return scrabble_gaddag 
 
 # pass in corpus in case we need to create the gaddag
-def read_gaddag_full(scrabble_corpus):
+def read_gaddag_full():
     gaddag_filename = os.path.join(os.path.dirname(__file__), 'static', 'data', 'gaddag_full.txt')
     if os.path.isfile(gaddag_filename):
         input_file = open(gaddag_filename, 'rb') 
         return pickle.load(input_file)
     else:
-        return write_gaddag_full(scrabble_corpus)
+        return write_gaddag_full()
     
     
    
