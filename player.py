@@ -1,7 +1,9 @@
 
 
+IS_HUMAN = True 
+IS_COMPUTER = False 
 class Player:
-    def __init__(self, name, is_human,):
+    def __init__(self, is_human):
         self.name = name
         self.is_human = is_human
         self.rack = []  

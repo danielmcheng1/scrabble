@@ -29,6 +29,10 @@ class Move:
             self.attempt_human_move(board, bag, player, action, tiles)
         else:
             self.attempt_computer_move(board, bag, player) 
+    def get_result(self):
+        return self.result 
+    def succeeded(self):
+        return self.result["success_flag"]
     '''
     FOR HUMAN PLAYER:
         (1) Validate that attempted move is legal (e.g. tiles placed on board form a valid word, exchanging a valid # of tiles)
