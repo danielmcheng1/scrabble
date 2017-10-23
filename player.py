@@ -12,6 +12,7 @@ class Player:
         
     def is_human(self):
         return self.is_human 
+        
     
     def draw_tiles_at_start_of_game(self, bag):
         self.draw_tiles(bag, rack.MAX_NUM_TILES)
@@ -31,8 +32,11 @@ class Player:
         for tile in tiles:
             self.rack.remove_one_tile_with_letter(tile.letter)
             self.rack.add_tile(bag.draw_tile())
-            
-        
+    
+    def add_new_word_played(self, word, score):
+        self.words_played.append({"word": word, "score": score})
+        self.score += score 
+          
     # specific case e.g. need to tell front end that a tile was played by the human or computer 
     def serialize_type(self):
         if self.is_human:
@@ -41,6 +45,5 @@ class Player:
             return "Computer"
     
     def serialize_rack(self):
-        return self.rack.serialize()
-        
+        return self.rack.serialize()  
             

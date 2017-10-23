@@ -40,18 +40,24 @@ class GameController:
         
         # pass the result back to the front end 
         return self.serialize()
+        
     def implement_last_move(self):
-        action = self.last_move.get_resulting_action()
+        last_move = self.last_move
+        action = last_move.get_resulting_action()
+        player = last_move.get_resulting_player()
+        
         if action == move.PLACE_TILES:
-            self.board.add_tiles(self.last_move.get_resulting_tiles_used)
+            self.board.add_tiles(last_move.get_resulting_tiles_used())
             self.num_consecutive_turns_passed = 0
         elif action == move.EXCHANGE_TILES:
-            self.last_move.get_resulting_player().exchange_tiles(self.bag, self.last_move.get_resulting_tiles_used)
+            player.exchange_tiles(self.bag, last_move.get_resulting_tiles_used())
             self.num_consecutive_turns_passed = 0
         elif action == move.PASS:
             self.num_consecutive_turns_passed += 1 
             
-        log_words   
+        player.add_new_word_played(last_move.get_resulting_word(), last_move.get_resulting_score())
+        player.draw_tiles_at_end_of_turn(self.bag)
+        
     def serialize(self):
         self.board.serialize_grid()
         self.board.serialize_tiles()
