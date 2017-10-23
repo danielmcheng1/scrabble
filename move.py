@@ -402,35 +402,23 @@ class Move:
                 
 
     ### COMPUTER FINDING HIGHEST SCORING MOVE ###
-    def find_highest_scoring_word(self, rack, board):
-        # iterate over all possible hook spots, building up words going both HORIZONTALLY and VERTICALLY 
-        # maintain pointer to the previous hook spot so that we do not recalculate possible words for that spot--when moving back from the current spot 
-        boundary = MIN_COL
+    def find_highest_scoring_word(self, board, rack):
         for (hook_row, hook_col) in valid_hook_spots:
-            constraint = Constraint(hook_row, hook_col, HORIZONTAL, boundary)
-            context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
-            
-            self.find_words_at_hook_spot(board, constraint, context)
-            boundary = hook_col + 1
-       
-        boundary = MIN_ROW
-        for (hook_row, hook_col) in valid_hook_spots:
-            constraint = Constraint(hook_row, hook_col, VERTICAL, boundary)
-            context = Context(rack, Location.location(hook_row, hook_col), True, None, None, None)
-            
-            self.find_words_at_hook_spot(board, constraint, context)
-            boundary = hook_row + 1
-            
-    def find_words_at_hook_spot(self, board, rack):
-        for (hook_row, hook_col) in valid_hook_spots:
-            self.generate_all_possible_moves_for_hook_location(board, rack, location.Location(hook_row, hook_col))
+            self.find_all_words_at_hook_location(board, rack, location.Location(hook_row, hook_col))
     
-    def generate_all_possible_moves_for_hook_location(self, board, rack, hook_location):
-        path_on_board = Path(hook_location, hook_location, HORIZONTAL, PREFIX_OFFSET)
-        tile_builder = TileBuilder(board, rack, [], [])
-        self.build_word(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
+    def find_all_words_at_hook_location(self, board, rack, hook_location):
+        # First find all horizontal words 
+        path_on_board = Path(board, hook_location, hook_location, HORIZONTAL, PREFIX_OFFSET)
+        tile_builder = TileBuilder(rack, [], [])
+        self.build_words(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
+        
+        # Then find all vertical words 
+        path_on_board = Path(board, hook_location, hook_location, VERTICAL, PREFIX_OFFSET)
+        tile_builder = TileBuilder(rack, [], [])
+        self.build_words(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
     
-    def build_word(self, node, path, tile_builder):
+    # Recursively build up words by walking down the gaddag and board
+    def build_words(self, node, path, tile_builder):
         if path.hit_previous_hook_spot() or path.outside_board():
             return 
             
@@ -515,15 +503,15 @@ class Move:
             if self.offset != PREFIX_OFFSET:
                 raise ValueError("Can only swith to suffix state from prefix state")
             if self.direction == HORIZONTAL:
-                return Path(board, hook_location, hook_location.offset(1, 0), direction, offset * -1)
+                return Path(self.board, self.hook_location, self.hook_location.offset(1, 0), self.direction, SUFFIX_OFFSET)
             else:
-                return Path(board, hook_location, hook_location.offset(0, 1), direction, offset * -1)
+                return Path(self.board, self.hook_location, self.hook_location.offset(0, 1), self.direction, SUFFIX_OFFSET)
          
         def move_one_square(self):
             if self.direction == HORIZONTAL:
-                return Path(board, hook_location, hook_location.offset(offset, 0), direction, offset)
+                return Path(self.board, self.hook_location, self.hook_location.offset(offset, 0), self.direction, self.offset)
             else:
-                return Path(board, hook_location, hook_location.offset(0, offset), direction, offset)
+                return Path(self.board, self.hook_location, self.hook_location.offset(0, offset), self.direction, self.offset)
                 
     class TileBuilder:
         def __init__(self, rack, tile_word, tiles_used):
