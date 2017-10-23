@@ -16,16 +16,19 @@ class Board:
         self.tiles_placed = [[None for col in range(MIN_COL, MAX_COL)] for row in range(MIN_ROW, MAX_ROW)]
         # convenient counter 
         self.num_words_placed = 0      
-    def serialize_grid(self):
-        return self.grid 
         
-    def serialize_tiles_placed(self):
-        return [['' if tile is None else tile.serialize() for tile in row] for row in self.tiles_placed]
     ### UPDATE BOARD ### 
     def add_tiles(self, tiles):
         for tile in tiles:
             self.tiles_placed[tile.get_row()][tile.get_col()] = tile 
             
+    ### SERIALIZE FOR FRONT END DISPLAY 
+    def serialize_grid(self):
+        return [[cell for cell in row] for row in self.grid]
+        
+    def serialize_tiles_placed(self):
+        return [['' if tile is None else tile.serialize() for tile in row] for row in self.tiles_placed]
+    
     # REFACTOR pick one of these -- currently balancing between location vs (row, col) implementation 
     ### TILE UTILITY METHODS ### 
     def has_tile(self, location):
