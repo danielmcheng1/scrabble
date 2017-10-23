@@ -43,3 +43,4 @@ class Tile:
                 'points': self.points, \
                 'player': "" if self.player is None else self.player.serialize_type(), \
                 'location': "" if self.location is None else self.location.serialize()}
+    

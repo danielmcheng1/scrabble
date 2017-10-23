@@ -24,8 +24,8 @@ class Move:
         # logs (1) if the human's attempted move was valid, and (2) the optimal move calculated by the computer 
         # game controller class uses this to update the board/racks and return to the front end 
         self.result = {"player": player, "action": action, "success": False, "detail": {}, "error": ""}
+        
         # now attempt the move 
-        print(tiles) 
         if player.is_human:
             self.attempt_human_move(board, bag, player, action, tiles)
         else:
@@ -38,24 +38,31 @@ class Move:
     '''
     def attempt_human_move(self, board, bag, player, move_type, attempted_tiles):
         sorted_tiles = self.sort_tiles(attempted_tiles)
+        
         if move_type == Move.PLACE_TILES:
-            self.attempt_move_place_tiles(sorted_tiles, board)
+            self.attempt_place_tiles(sorted_tiles, board)
         elif move_type == Move.EXCHANGE_TILES:
             self.attempt_move_exchange_tiles(sorted_tiles)
         elif move_type == Move.PASS:
             self.attempt_move_pass()
         
     ### HUMAN: PLACE TILES ###
-    def attempt_move_place_tiles(self, sorted_tiles, board):
+    def attempt_place_tiles(self, sorted_tiles, board):
+        self.print_tile_list(sorted_tiles) 
         try:
             self.validate_nonzero_tiles(sorted_tiles)
+            print("1")
             self.validate_in_one_row_or_column(sorted_tiles)
+            print("2")
             self.validate_tiles_hook_onto_existing(sorted_tiles)
+            print("3")
         except Exception as e:
             self.log_error_human(e)
             return 
-            
+         
+        print("4")
         direction = self.get_direction(sorted_tiles) 
+        print("direction: " + str(direction))
         start_location = self.find_start_of_word(sorted_tiles[0].location, direction, board)
         num_tiles = len(sorted_tiles) 
         
@@ -65,6 +72,7 @@ class Move:
         tile_word = [] 
         while True:
             # existing board tile 
+            print(current_location)
             if board.has_tile(current_location):
                 tile_word.append(board.get_tile(current_location)) 
             # we've used all the tiles placed by the player 
@@ -86,9 +94,9 @@ class Move:
                 
             # now increment to the next spot 
             if direction == Move.HORIZONTAL:
-                current_location = current_location.offset(-1, 0)
+                current_location = current_location.offset(0, 1)
             else:
-                current_location = current_location.offset(0, -1)
+                current_location = current_location.offset(1, 0)
         
         # validate the full word now that we've walked down the board 
         try:
@@ -304,24 +312,24 @@ class Move:
         # checks if we have room (= no tile on the board)--if we were to continue offsetting in the current direction 
         def has_room(self):
             if self.direction == Move.HORIZONTAL:
-                return self.board.has_tile(self.curr_location.offset(offset, 0))
-            else: 
                 return self.board.has_tile(self.curr_location.offset(0, offset))
+            else: 
+                return self.board.has_tile(self.curr_location.offset(offset, 0))
 
          ### WRITE FUNCTIONS (path needs to be modified so return a new instance) 
         def switch_to_suffix(self):
             if self.offset != Move.PREFIX_OFFSET:
                 raise ValueError("Can only swith to suffix state from prefix state")
             if self.direction == Move.HORIZONTAL:
-                return Path(self.board, self.hook_location, self.hook_location.offset(1, 0), self.direction, Move.SUFFIX_OFFSET)
-            else:
                 return Path(self.board, self.hook_location, self.hook_location.offset(0, 1), self.direction, Move.SUFFIX_OFFSET)
+            else:
+                return Path(self.board, self.hook_location, self.hook_location.offset(1, 0), self.direction, Move.SUFFIX_OFFSET)
          
         def move_one_square(self):
             if self.direction == Move.HORIZONTAL:
-                return Path(self.board, self.hook_location, self.hook_location.offset(offset, 0), self.direction, self.offset)
-            else:
                 return Path(self.board, self.hook_location, self.hook_location.offset(0, offset), self.direction, self.offset)
+            else:
+                return Path(self.board, self.hook_location, self.hook_location.offset(offset, 0), self.direction, self.offset)
                 
     class TileBuilder:
         def __init__(self, rack, tile_word, tiles_used):
@@ -433,9 +441,9 @@ class Move:
                 else:
                     break 
             if direction == Move.HORIZONTAL:
-                location = location.offset(1, 0)
-            else:
                 location = location.offset(0, 1)
+            else:
+                location = location.offset(1, 0)
                 
         # check if we formed a valid word 
         try:
@@ -566,11 +574,16 @@ class Move:
                 "error": self.result["error"]}
     
     # printing functions for debugging 
+    PRINT_DIVIDER = "-------------------------------"
     def print_all_crossword_scores(self):
         print("\nPrinting all_crossword_scores")
         for direction in self.all_crossword_scores:
             for (x, y) in self.all_crossword_scores[direction]:
                 print(str((x, y)) + " --> " + str(self.all_crossword_scores[direction][(x, y)]))
-        print("-------------------------------")
-        
+        print(Move.PRINT_DIVIDER)
+    def print_tile_list(self, tile_list):
+        print("\nPrinting tile list")
+        for tile in tile_list:
+            print(tile.serialize()) 
+        print(Move.PRINT_DIVIDER)
                         

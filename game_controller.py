@@ -117,11 +117,11 @@ if __name__ == "__main__":
     game.human_player.rack.remove_one_tile_random()
     game.human_player.rack.add_tile(tile.Tile("A", game.human_player, location.Location(7, 7)))
     game.human_player.rack.add_tile(tile.Tile("T", game.human_player, location.Location(7, 8)))
-    print(game.human_player.rack.serialize())
+    # print(game.human_player.rack.serialize())
     game.process_human_move(move.Move.PLACE_TILES, game.human_player.rack.tiles[-2:])
-    
     serial = game.serialize()
     for key in serial.keys():
-        print(key)
-        print(serial[key])
-        print("------------------------------\n")
+        if key == "lastMove":
+            print(key)
+            print(serial[key])
+            print("------------------------------\n")
