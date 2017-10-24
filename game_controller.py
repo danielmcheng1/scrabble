@@ -27,7 +27,7 @@ class GameController:
         
         self.last_move = None
         
-    def process_human_move(self, action, tiles):
+    def process_human_move(self, action, tiles = None):
         # do not process further if the game has already ended 
         if self.game_has_ended():
             return self.serialize()
@@ -101,23 +101,28 @@ class GameController:
         wrapper["gameInfo"] = self.serialize_game_info()
         wrapper["lastMove"] = self.last_move.serialize_result() if self.last_move is not None else {}
         return wrapper 
+    def print_serialize(self):
+        serialized = self.serialize()
+        for key in serialized:
+            print(key)
+            print(serialized[key])
+            print("------------------------------\n")
     
 if __name__ == "__main__":
     game = GameController()
-    serial = game.serialize()
-    for key in serial.keys():
-        print(key)
-        print(serial[key])
-        print("------------------------------\n")
+    game.print_serialize()
     
     game.human_player.rack.remove_one_tile_random()
+    game.human_player.rack.remove_one_tile_random()
+    game.human_player.rack.remove_one_tile_random()
     game.human_player.rack.add_tile(tile.Tile("A", game.human_player, location.Location(7, 7)))
-    game.human_player.rack.add_tile(tile.Tile("T", game.human_player, location.Location(7, 8)))
+    game.human_player.rack.add_tile(tile.Tile("N", game.human_player, location.Location(7, 8)))
+    game.human_player.rack.add_tile(tile.Tile("T", game.human_player, location.Location(7, 9)))
     
-    game.process_human_move(move.Move.PLACE_TILES, game.human_player.rack.tiles[-2:])
-    serial = game.serialize()
-    for key in serial.keys():
-        if key == "lastMove":
-            print(key)
-            print(serial[key])
-            print("------------------------------\n")
+    game.process_human_move(move.Move.PLACE_TILES, game.human_player.rack.tiles[-3:])
+    game.print_serialize()        
+        
+    game.process_human_move(move.Move.PASS) 
+    game.print_serialize()   
+    game.process_human_move(move.Move.PASS) 
+    game.print_serialize()
