@@ -53,6 +53,7 @@ class GameController:
         player = last_move.get_resulting_player()
         
         if action == move.Move.PLACE_TILES:
+            self.rack.use_tiles(last_move.get_resulting_tiles_used())
             self.board.play_tiles(last_move.get_resulting_tiles_used())
             self.num_consecutive_turns_passed = 0
         elif action == move.Move.EXCHANGE_TILES:
@@ -112,12 +113,12 @@ if __name__ == "__main__":
     game = GameController()
     game.print_serialize()
     
-    game.human_player.rack.remove_one_tile_random()
-    game.human_player.rack.remove_one_tile_random()
-    game.human_player.rack.remove_one_tile_random()
-    game.human_player.rack.remove_one_tile_random()
-    game.human_player.rack.remove_one_tile_random()
-    game.human_player.rack.remove_one_tile_random()
+    game.human_player.rack.use_one_tile_random()
+    game.human_player.rack.use_one_tile_random()
+    game.human_player.rack.use_one_tile_random()
+    game.human_player.rack.use_one_tile_random()
+    game.human_player.rack.use_one_tile_random()
+    game.human_player.rack.use_one_tile_random()
     game.human_player.rack.add_tile(tile.Tile("G", game.human_player, location.Location(7, 7)))
     game.human_player.rack.add_tile(tile.Tile("E", game.human_player, location.Location(7, 8)))
     game.human_player.rack.add_tile(tile.Tile("N", game.human_player, location.Location(7, 9)))

@@ -31,14 +31,17 @@ class Rack:
         
     def add_tile(self, tile):
         self.tiles.append(tile)
-        
-    def remove_one_tile_random(self):
+    
+    def use_tiles(self, tiles):
+        for tile in tiles:
+            self.use_one_tile_with_letter(tile.letter)
+            
+    def use_one_tile_random(self):
         removed_tile = self.tiles[-1]
         self.tiles = self.tiles[:-1]
         return removed_tile
         
-    def remove_one_tile_with_letter(self, letter):
-        
+    def use_one_tile_with_letter(self, letter):
         new_tiles = []
         removed_tile = None 
         for tile in self.tiles:
