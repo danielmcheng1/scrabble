@@ -6,7 +6,7 @@ import rack
 import gaddag 
 import game_controller 
 from game_controller import SCRABBLE_GADDAG
-
+# REFACTOR tiles are not deep copied 
 # REFACTOR errors? at least not value error....
 class Move: 
     PLACE_TILES = "Place tiles"
@@ -590,11 +590,14 @@ class Move:
         
         
     def serialize_result(self):
-        return {"player": self.result["player"].serialize_type(), \
+        rv = {"player": self.result["player"].serialize_type(), \
                 "action": self.result["action"], \
                 "success": str(self.result["success"]), \
                 "detail": self.result["detail"], \
                 "error": self.result["error"]}
+        if "tiles_used" in rv.result["detail"]:
+            rv.result["detail"]["tiles_used"] = [tile.serialize() for tile in rv.result["detail"]["tiles_used"]
+        return rv
     
     # printing functions for debugging 
     PRINT_DIVIDER = "-------------------------------"

@@ -19,8 +19,10 @@ class Player:
         # architecture assumes validation happened in move class 
         num_tiles_to_draw = min(bag.num_tiles_left(), n)
         bag.shuffle_bag()
+        print("Before: {0}".format(bag.num_tiles_left()))
         for i in range(0, num_tiles_to_draw):
             self.rack.add_tile(bag.draw_tile().change_player(self))
+        print("After: {0}".format(bag.num_tiles_left()))
             
     def exchange_tiles(self, bag, tiles):
         bag.shuffle_bag() 
