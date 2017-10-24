@@ -40,12 +40,11 @@ class Move:
         (2) If the player is attempting to place tiles on the board, pull the full word (since this involves board tiles) and calculate the score 
     '''
     def attempt_human_move(self, board, bag, player, move_type, attempted_tiles):
-        sorted_tiles = self.sort_tiles(attempted_tiles)
-        
         if move_type == Move.PLACE_TILES:
+            sorted_tiles = self.sort_tiles(attempted_tiles)
             self.attempt_place_tiles(sorted_tiles, board)
         elif move_type == Move.EXCHANGE_TILES:
-            self.attempt_move_exchange_tiles(sorted_tiles)
+            self.attempt_move_exchange_tiles(attempted_tiles)
         elif move_type == Move.PASS:
             self.attempt_move_pass()
         
@@ -202,8 +201,8 @@ class Move:
         self.log_success_exchanged(tiles)
     
     ### HUMAN MOVE: PASSING ###
-    def attempt_move_pass(self, player):
-        self.log_success_move.passed()
+    def attempt_move_pass(self):
+        self.log_success_move_passed()
         
         
     ''' 
@@ -219,7 +218,7 @@ class Move:
                 num_tiles_to_exchange = min(bag.num_tiles_left(), rack.Rack.MAX_NUM_TILES)
                 self.log_success_exchanged(player.rack.get_n_tiles(num_tiles_to_exchange))
             else:
-                self.log_success_move.passed()
+                self.log_success_move_passed()
                 
 
     ### COMPUTER FINDING HIGHEST SCORING MOVE ###
