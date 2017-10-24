@@ -50,7 +50,6 @@ class Move:
         
     ### HUMAN: PLACE TILES ###
     def attempt_place_tiles(self, sorted_tiles, board):
-        self.print_tile_list(sorted_tiles) 
         try:
             self.validate_nonzero_tiles(sorted_tiles)
             self.validate_in_one_row_or_column(sorted_tiles)
@@ -217,11 +216,14 @@ class Move:
 
     ### COMPUTER FINDING HIGHEST SCORING MOVE ###
     def find_highest_scoring_word(self, board, rack):
+        print("Starting highest scoring word")
         for (hook_row, hook_col) in self.all_hook_spots:
             self.find_all_words_at_hook_location(board, rack, location.Location(hook_row, hook_col))
-    
+        print("Ending highest scoring word")
+        
     def find_all_words_at_hook_location(self, board, rack, hook_location):
         # First find all Move.HORIZONTAL words 
+        print("Starting search at " + hook_location)
         path_on_board = Move.Path(self, board, hook_location, hook_location, Move.HORIZONTAL, Move.PREFIX_OFFSET)
         tile_builder = Move.TileBuilder(rack, [], [])
         self.build_words(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
@@ -230,7 +232,8 @@ class Move:
         path_on_board = Move.Path(self, board, hook_location, hook_location, Move.VERTICAL, Move.PREFIX_OFFSET)
         tile_builder = Move.TileBuilder(rack, [], [])
         self.build_words(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
-   
+        print("Ending search at " + hook_location)
+        
    
     # Recursively build up words by walking down the gaddag and board
     def build_words(self, node, path, tile_builder):
@@ -248,12 +251,27 @@ class Move:
                     new_tile_builder = tile_builder.use_tile_on_board(curr_tile, path)
                     score = self.calc_word_score(new_tile_builder.tile_word, path.board)
                     self.log_success_computer_placed(new_tile_builder.tile_word, new_tile_builder.tiles_used, score)
+                else:
+                    if not curr_tile.letter == letter:
+                        print("Did not place, board tile conflicted with {0}!".format(letter))
+                    else:
+                        print("Did not place, board tile matched but path had no room for letter {0}!".format(letter))
+                    for tile in tile_word:
+                        print(tile.serialize())
             else:
                 if path.letter_in_all_crossword_scores(letter) and tile_builder.rack_has_letter(letter) and path.has_room():
                     new_tile_builder = tile_builder.use_tile_in_rack(letter, path)
                     score = self.calc_word_score(new_tile_builder.tile_word, path.board)
                     self.log_success_computer_placed(new_tile_builder.tile_word, new_tile_builder.tiles_used, score)
-                    
+                else:
+                    if not path.letter_in_all_crossword_scores(letter):
+                        print("Did not place, {0} not in all crossword scores".format(letter))
+                    elif not tile_builder.rack_has_letter(letter):
+                        print("Did not place, {0} not in rack".format(letter))
+                    else:
+                        print("Did not place, rack and crossword matched but path did not have room for {0}".format(letter))
+                    for tile in tile_word:
+                        print(tile.serialize())
         # now recurse on for all other edges going out from this node
         for letter in node.edges.keys():
             # check if we need to reverse from prefix formation to suffix formation 
@@ -340,8 +358,8 @@ class Move:
     class TileBuilder:
         def __init__(self, rack, tile_word, tiles_used):
             self.rack = rack.copy_rack()
-            self.tile_word = tile_word[:]
-            self.tiles_used = tiles_used[:]
+            self.tile_word = [tile.copy_tile() for tile in tile_word[:]]
+            self.tiles_used = [tile.copy_tile() for tile in tiles_used[:]]
         def print(self):
             print("rack : {0}, tile_word: {1}, tiles_used: {2}".format(self.rack.get_letters(), self.concatenate_tiles(self.tile_word), self.concatenate_tiles(self.tiles_used)))
         
@@ -567,7 +585,10 @@ class Move:
             self.result["detail"]["score"] = score 
             self.result["detail"]["word"] = "".join([tile.letter for tile in tile_word])
             self.result["detail"]["tiles_used"] = tiles_used
-        
+        print("Computer found a word!")
+        for tile in tile_word:
+            print(tile.serialize())
+            
     def log_success_exchanged(self, tiles_used):
         self.result["success"] = True 
         self.result["action"] = Move.EXCHANGE_TILES

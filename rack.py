@@ -27,7 +27,7 @@ class Rack:
     
     ### WRITE / MODIFY FUNCTIONS ###
     def copy_rack(self):
-        return Rack(self.tiles[:])
+        return Rack([tile.copy_tile() for tile in self.tiles])
         
     def add_tile(self, tile):
         self.tiles.append(tile)

@@ -37,6 +37,15 @@ class Player:
         for tile in exchanged_tiles:
             bag.add_tile(tile)
     
+    # use up tiles from the player's rack so that the board can play them 
+    def use_tiles_for_placing(self, tiles):
+        print("Rack")
+        print(self.rack.serialize())
+        print("Input tiles for placing")
+        for tile in tiles:
+            print(tile.serialize())
+            
+        self.rack.use_tiles(tiles)
     def add_new_word_played(self, word, score):
         self.words_played.append({"word": word, "score": score})
         self.running_score += score 

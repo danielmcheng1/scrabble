@@ -53,7 +53,7 @@ class GameController:
         player = last_move.get_resulting_player()
         
         if action == move.Move.PLACE_TILES:
-            self.rack.use_tiles(last_move.get_resulting_tiles_used())
+            player.use_tiles_for_placing(last_move.get_resulting_tiles_used())
             self.board.play_tiles(last_move.get_resulting_tiles_used())
             self.num_consecutive_turns_passed = 0
         elif action == move.Move.EXCHANGE_TILES:
@@ -102,16 +102,17 @@ class GameController:
         wrapper["gameInfo"] = self.serialize_game_info()
         wrapper["lastMove"] = self.last_move.serialize_result() if self.last_move is not None else {}
         return wrapper 
+        
     def print_serialize(self):
         serialized = self.serialize()
         for key in serialized:
             print(key)
-            if key in ("board", "tiles"):
-                print(serialized[key])
+            if key in ("board", "tiles", "rackHuman", "rackComputer"):
+                for elem in serialized[key]:
+                    print(elem)
             else:
                 for key_inner in serialized[key]:
-                    print("  {key_inner}".format(key_inner = key_inner))
-                    print(serialized[key][key_inner])
+                    print("  {key_inner}: {value}".format(key_inner = key_inner, value = serialized[key][key_inner]))
         print("------------------------------\n")
     
 if __name__ == "__main__":
