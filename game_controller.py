@@ -106,8 +106,13 @@ class GameController:
         serialized = self.serialize()
         for key in serialized:
             print(key)
-            print(serialized[key])
-            print("------------------------------\n")
+            if key in ("board", "tiles"):
+                print(serialized[key])
+            else:
+                for key_inner in serialized[key]:
+                    print("  {key_inner}".format(key_inner = key_inner))
+                    print(serialized[key][key_inner])
+        print("------------------------------\n")
     
 if __name__ == "__main__":
     game = GameController()

@@ -563,7 +563,7 @@ class Move:
         self.result["success"] = True 
         self.result["action"] = Move.PLACE_TILES
         
-        if score > self.result["detail"].get("score", 0):
+        if score > self.result["detail"].get("score", -1):
             self.result["detail"]["score"] = score 
             self.result["detail"]["word"] = "".join([tile.letter for tile in tile_word])
             self.result["detail"]["tiles_used"] = tiles_used
@@ -590,7 +590,7 @@ class Move:
             if key == "tiles_used":
                 detail["tiles_used"] = [tile.serialize() for tile in self.result["detail"]["tiles_used"]]
             else:
-                detail[key] = self.result["detail"]["tiles_used"]
+                detail[key] = self.result["detail"][key]
                 
         return {"player": self.result["player"].serialize_type(), \
                 "action": self.result["action"], \
