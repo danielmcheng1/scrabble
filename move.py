@@ -595,8 +595,9 @@ class Move:
                 "success": str(self.result["success"]), \
                 "detail": self.result["detail"], \
                 "error": self.result["error"]}
-        if "tiles_used" in rv.result["detail"]:
-            rv.result["detail"]["tiles_used"] = [tile.serialize() for tile in rv.result["detail"]["tiles_used"]
+        print(rv["detail"]["tiles_used"])
+        if "tiles_used" in rv["detail"]:
+            rv["detail"]["tiles_used"] = [tile.serialize() for tile in rv["detail"]["tiles_used"]]
         return rv
     
     # printing functions for debugging 
