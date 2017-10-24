@@ -256,7 +256,7 @@ class Move:
                         print("Did not place, board tile conflicted with {0}!".format(letter))
                     else:
                         print("Did not place, board tile matched but path had no room for letter {0}!".format(letter))
-                    for tile in tile_word:
+                    for tile in tile_builder.tile_word:
                         print(tile.serialize())
             else:
                 if path.letter_in_all_crossword_scores(letter) and tile_builder.rack_has_letter(letter) and path.has_room():
@@ -270,7 +270,7 @@ class Move:
                         print("Did not place, {0} not in rack".format(letter))
                     else:
                         print("Did not place, rack and crossword matched but path did not have room for {0}".format(letter))
-                    for tile in tile_word:
+                    for tile in tile_builder.tile_word:
                         print(tile.serialize())
         # now recurse on for all other edges going out from this node
         for letter in node.edges.keys():

@@ -21,6 +21,9 @@ class Location:
     def __str__(self):
         return "({0}, {1})".format(self.row, self.col)
     
+    def __repr__(self):
+        return "({0}, {1})".format(self.row, self.col)
+    
     def __eq__(self, other):
         return self.get_row() == other.get_row() and self.get_col() == other.get_col() 
     

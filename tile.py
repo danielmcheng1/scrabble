@@ -37,7 +37,7 @@ class Tile:
         self.location = location 
         
     def copy_tile(self):
-        return Tile(self.letter, self.player, self.points, self.location)
+        return Tile(self.letter, self.player, self.location)
         
     def remove_player(self):
         self.player = None 
