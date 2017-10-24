@@ -4,6 +4,7 @@ import location
 import board 
 import rack 
 import gaddag 
+import game_controller 
 from game_controller import SCRABBLE_GADDAG
 
 # REFACTOR errors? at least not value error....
@@ -240,6 +241,8 @@ class Move:
    
     # Recursively build up words by walking down the gaddag and board
     def build_words(self, node, path, tile_builder):
+        path.print() 
+        tile_builder.print() 
         if path.hit_previous_hook_spot() or path.outside_board():
             return 
             
@@ -249,12 +252,14 @@ class Move:
             if path.has_board_tile():
                 curr_tile = path.get_board_tile()
                 if curr_tile.letter == letter and path.has_room():
-                    new_tile_builder = tile_builder.add_tile(curr_tile)
-                    log_success_computer_placed(new_tile_builder)
+                    new_tile_builder = tile_builder.use_tile_on_board(curr_tile, path)
+                    score = self.calc_word_score(new_tile_builder.tile_word, path.board)
+                    self.log_success_computer_placed(new_tile_builder.tile_word, new_tile_builder.tiles_used, score)
             else:
                 if path.letter_in_all_crossword_scores(letter) and tile_builder.rack_has_letter(letter) and path.has_room():
-                    new_tile_builder = tile_builder.use_tile_in_rack(letter)
-                    log_success_computer_placed(new_tile_builder)
+                    new_tile_builder = tile_builder.use_tile_in_rack(letter, path)
+                    score = self.calc_word_score(new_tile_builder.tile_word, path.board)
+                    self.log_success_computer_placed(new_tile_builder.tile_word, new_tile_builder.tiles_used, score)
                     
         # now recurse on for all other edges going out from this node
         for letter in node.edges.keys():
@@ -269,14 +274,14 @@ class Move:
             elif path.has_board_tile():
                 curr_tile = path.get_board_tile()
                 if curr_tile.letter == letter:
-                    new_tile_builder = tile_builder.add_tile(curr_tile)
+                    new_tile_builder = tile_builder.use_tile_on_board(curr_tile, path)
                     new_path = path.move_one_square()
                     self.build_words(node.edges[letter], new_path, new_tile_builder) 
             
             # otherwise, try to use a tile from the rack, constrained by it forming a valid crossword 
             else:
                 if path.letter_in_all_crossword_scores(letter) and tile_builder.rack_has_letter(letter):
-                    new_tile_builder = tile_builder.use_tile_in_rack(letter)
+                    new_tile_builder = tile_builder.use_tile_in_rack(letter, path)
                     new_board_path = path.move_one_square()
                     self.build_words(node.edges[letter], new_board_path, new_tile_builder) 
                     
@@ -291,7 +296,8 @@ class Move:
             self.curr_location = curr_location 
             self.direction = direction 
             self.offset = offset
-            
+        def print(self):
+            print("@{location}, offset {offset}, going {direction} from {hook}".format(direction = self.direction, hook = self.hook_location, location = self.curr_location, offset = self.offset))
         ### READ FUNCTIONS (nothing modified so no new path is returned) ###
         def has_board_tile(self):
             return self.board.has_tile(self.curr_location)
@@ -334,30 +340,42 @@ class Move:
          
         def move_one_square(self):
             if self.direction == Move.HORIZONTAL:
-                return Move.Path(self.move, self.board, self.hook_location, self.hook_location.offset(0, self.offset), self.direction, self.offset)
+                return Move.Path(self.move, self.board, self.hook_location, self.curr_location.offset(0, self.offset), self.direction, self.offset)
             else:
-                return Move.Path(self.move, self.board, self.hook_location, self.hook_location.offset(self.offset, 0), self.direction, self.offset)
+                return Move.Path(self.move, self.board, self.hook_location, self.curr_location.offset(self.offset, 0), self.direction, self.offset)
         
     class TileBuilder:
         def __init__(self, rack, tile_word, tiles_used):
             self.rack = rack.copy_rack()
             self.tile_word = tile_word[:]
             self.tiles_used = tiles_used[:]
+        def print(self):
+            print("rack : {0}, tile_word: {1}, tiles_used: {2}".format(self.rack.get_letters(), self.concatenate_tiles(self.tile_word), self.concatenate_tiles(self.tiles_used)))
+        
+        def concatenate_tiles(self, tiles):
+            return "".join([tile.letter for tile in tiles])
             
         def rack_has_letter(self, letter):
             return self.rack.contains_letter(letter)
-            
-        def use_tile_in_rack(self, letter):
-            
+           
+        def use_tile_in_rack(self, letter, path):
+            # tile is moved from rack and "placed" on the board (temporarily) 
             new_rack = self.rack.copy_rack()
             removed_tile = new_rack.remove_one_tile_with_letter(letter)
+            removed_tile.change_location(path.curr_location)
             
-            new_tile_word = self.tile_word + [removed_tile]
-            new_tiles_used = self.tiles_used + [removed_tile]
-            return Move.TileBuilder(new_rack, new_tile_word, new_tiles_used) 
+            # offset determines if we are adding to the prefix or suffix 
+            if path.offset == Move.PREFIX_OFFSET:
+                return Move.TileBuilder(new_rack, [removed_tile] + self.tile_word, [removed_tile] + self.tiles_used) 
+            else:
+                return Move.TileBuilder(new_rack, self.tile_word + [removed_tile], self.tiles_used + [removed_tile]) 
             
-        def add_tile(self, tile):
-            return Move.TileBuilder(self.rack, self.tile_word + [tile], self.tiles_used + [tile])
+        def use_tile_on_board(self, tile, path):
+            # offset determines if we are adding to the prefix or suffix 
+            if path.offset == Move.PREFIX_OFFSET:
+                return Move.TileBuilder(self.rack, [tile] + self.tile_word, [tile] + self.tiles_used)
+            else:
+                return Move.TileBuilder(self.rack, self.tile_word + [tile], self.tiles_used + [tile])
         
         
     '''
@@ -369,26 +387,26 @@ class Move:
         valid_hook_spots = []
         for row in range(board.Board.MIN_ROW, board.Board.MAX_ROW):
             for col in range(board.Board.MIN_COL, board.Board.MAX_COL):
-                if self.is_valid_hook_spot(local_board, row, col):
+                if self.is_valid_hook_spot(local_board, location.Location(row, col)):
                     valid_hook_spots.append((row, col))
                     
         return valid_hook_spots
     
-    def is_valid_hook_spot(self, local_board, row, col):
+    def is_valid_hook_spot(self, local_board, location):
         if local_board.num_words_placed == 0: 
-            if row == board.Board.CENTER_ROW and col <= board.Board.CENTER_COL and col > board.Board.CENTER_COL - rack.Rack.MAX_NUM_TILES:
+            if location.get_row() == board.Board.CENTER_ROW: # and col <= board.Board.CENTER_COL and col > board.Board.CENTER_COL - rack.Rack.MAX_NUM_TILES:
                 return True 
-            if col == board.Board.CENTER_COL and row <= board.Board.CENTER_ROW and row > board.Board.CENTER_ROW - rack.Rack.MAX_NUM_TILES:
+            if location.get_col() == board.Board.CENTER_COL: # and row <= board.Board.CENTER_ROW and row > board.Board.CENTER_ROW - rack.Rack.MAX_NUM_TILES:
                 return True 
             return False 
         else:
-            if this_board.has_tile(location):
+            if local_board.has_tile(location):
                 return False 
             else:
                 #check if there is a non-blank spot on the board adjacent to it
-                if this_board.has_tile(location.offset(-1, 0)) or this_board.has_tile(location.offset(1, 0)):
+                if local_board.has_tile(location.offset(-1, 0)) or local_board.has_tile(location.offset(1, 0)):
                     return True 
-                if this_board.has_tile(location.offset(0, -1)) or this_board.has_tile(location.offset(0, 1)):
+                if local_board.has_tile(location.offset(0, -1)) or local_board.has_tile(location.offset(0, 1)):
                     return True 
                 return False 
                     
@@ -548,19 +566,15 @@ class Move:
         self.result["detail"]["tiles_used"] = tiles_used 
         self.result["detail"]["score"] = score 
         
-    def log_success_computer_placed(self, word, tile_builder):
+    def log_success_computer_placed(self, tile_word, tiles_used, score):
         self.result["success"] = True 
         self.result["action"] = Move.PLACE_TILES
         
-        tiles_used = tile_builder.tiles_used
-        score = self.calc_word_score(tiles_used)
-        word = [tile.letter for tile in tiles_used]
-        
         if score > self.result["detail"].get("score", 0):
             self.result["detail"]["score"] = score 
-            self.result["detail"]["word"] = word
+            self.result["detail"]["word"] = "".join([tile.letter for tile in tile_word])
             self.result["detail"]["tiles_used"] = tiles_used
-         
+        
     def log_success_exchanged(self, tiles_used):
         self.result["success"] = True 
         self.result["action"] = Move.EXCHANGE_TILES

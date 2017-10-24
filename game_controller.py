@@ -53,7 +53,7 @@ class GameController:
         player = last_move.get_resulting_player()
         
         if action == move.Move.PLACE_TILES:
-            self.board.add_tiles(last_move.get_resulting_tiles_used())
+            self.board.play_tiles(last_move.get_resulting_tiles_used())
             self.num_consecutive_turns_passed = 0
         elif action == move.Move.EXCHANGE_TILES:
             player.exchange_tiles(self.bag, last_move.get_resulting_tiles_used())

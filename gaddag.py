@@ -82,7 +82,7 @@ class gaddag:
                 if curr_node.eow_set:
                     print (start_path + str(curr_node.eow_set))
                 start_path = start_path + letter + "-->"
-                start_indent = start_indent + GADDAG_PRINT_INDENT
+                start_indent = start_indent + gaddag_node.GADDAG_PRINT_INDENT
                 curr_node = curr_node.edges[letter]
             elif not curr_node.edges or curr_node.eow_set: 
                 if letter not in curr_node.eow_set:

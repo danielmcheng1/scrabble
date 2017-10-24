@@ -18,10 +18,11 @@ class Board:
         self.num_words_placed = 0      
         
     ### UPDATE BOARD ### 
-    def add_tiles(self, tiles):
+    def play_tiles(self, tiles):
         for tile in tiles:
             self.tiles_placed[tile.location.get_row()][tile.location.get_col()] = tile 
-            
+        self.num_words_placed += 1
+        
     ### SERIALIZE FOR FRONT END DISPLAY 
     def serialize_grid(self):
         return [[cell for cell in row] for row in self.grid]

@@ -36,6 +36,17 @@ class Tile:
         self.points = Tile.SCRABBLE_SCORE_DICT[letter]
         self.location = location 
         
+    def remove_player(self):
+        self.player = None 
+        return self
+    
+    def change_player(self, player):
+        self.player = player
+        return self 
+    
+    def change_location(self, location):
+        self.location = location 
+        
     def serialize(self):
         # player can be None if this is a tile in the bag 
         # location can be None if tile has not been placed on the board 

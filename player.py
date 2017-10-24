@@ -20,13 +20,20 @@ class Player:
         num_tiles_to_draw = min(bag.num_tiles_left(), n)
         bag.shuffle_bag()
         for i in range(0, num_tiles_to_draw):
-            self.rack.add_tile(bag.draw_tile())
+            self.rack.add_tile(bag.draw_tile().change_player(self))
             
     def exchange_tiles(self, bag, tiles):
         bag.shuffle_bag() 
+        exchanged_tiles = []
         for tile in tiles:
-            self.rack.remove_one_tile_with_letter(tile.letter)
-            self.rack.add_tile(bag.draw_tile())
+            exchanged_tile = self.rack.remove_one_tile_with_letter(tile.letter)
+            exchanged_tiles.append(exchanged_tile.remove_player())
+            
+            self.rack.add_tile(bag.draw_tile().change_player(self))
+        
+        # remove these after drawing complete so that we don't draw a tile that we just exchanged  
+        for tile in exchanged_tiles:
+            bag.add_tile(tile)
     
     def add_new_word_played(self, word, score):
         self.words_played.append({"word": word, "score": score})

@@ -38,16 +38,13 @@ class Rack:
         return removed_tile
         
     def remove_one_tile_with_letter(self, letter):
-        print("\n" + str(self.serialize()))
         
         new_tiles = []
         removed_tile = None 
         for tile in self.tiles:
             if tile.letter == letter and removed_tile is None:
-                print("removed tile: {0}".format(removed_tile))
                 removed_tile = tile 
             else:
-                print("not removed tile: {0}".format(removed_tile))
                 new_tiles.append(tile)
         if removed_tile is None:
             raise ValueError("Failed to find tile with letter " + letter)

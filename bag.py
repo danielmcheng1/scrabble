@@ -15,6 +15,9 @@ class Bag:
     # for randomness, assumes bag was shuffled beforehand 
     def draw_tile(self):
         return self.bag.pop() 
+    
+    def add_tile(self, tile):
+        self.bag.append(tile) 
         
     def num_tiles_left(self):
         return len(self.bag) 
