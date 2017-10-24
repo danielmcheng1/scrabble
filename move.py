@@ -223,7 +223,7 @@ class Move:
         
     def find_all_words_at_hook_location(self, board, rack, hook_location):
         # First find all Move.HORIZONTAL words 
-        print("Starting search at " + hook_location)
+        print("Starting search at " + str(hook_location))
         path_on_board = Move.Path(self, board, hook_location, hook_location, Move.HORIZONTAL, Move.PREFIX_OFFSET)
         tile_builder = Move.TileBuilder(rack, [], [])
         self.build_words(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
@@ -232,7 +232,7 @@ class Move:
         path_on_board = Move.Path(self, board, hook_location, hook_location, Move.VERTICAL, Move.PREFIX_OFFSET)
         tile_builder = Move.TileBuilder(rack, [], [])
         self.build_words(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
-        print("Ending search at " + hook_location)
+        print("Ending search at " + str(hook_location))
         
    
     # Recursively build up words by walking down the gaddag and board
@@ -330,16 +330,15 @@ class Move:
         # checks if we have room (= no tile on the board)--if we were to continue offsetting in the current direction 
         def has_room(self):
             if self.direction == Move.HORIZONTAL:
-                return self.board.has_tile(self.curr_location.offset(0, self.offset))
+                return not self.board.has_tile(self.curr_location.offset(0, self.offset))
             else: 
-                return self.board.has_tile(self.curr_location.offset(self.offset, 0))
+                return not self.board.has_tile(self.curr_location.offset(self.offset, 0))
         
         # checks if we hit a PREVIOUS hook spot; hence the offset must be going left/up (Move.PREFIX_OFFSET) 
         def hit_previous_hook_spot(self):
             return self.curr_location != self.hook_location and self.offset == Move.PREFIX_OFFSET and self.curr_location.get_tuple() in self.move.all_hook_spots
         
         
-            
          ### WRITE FUNCTIONS (path needs to be modified so return a new instance) 
         def switch_to_suffix(self):
             if self.offset != Move.PREFIX_OFFSET:
