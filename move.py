@@ -4,6 +4,7 @@ import location
 import board 
 import rack 
 import gaddag 
+from game_controller import SCRABBLE_GADDAG
 
 # REFACTOR errors? at least not value error....
 class Move: 
@@ -117,7 +118,7 @@ class Move:
     def validate_word_in_dictionary(self, word):
         letter_representation = "".join(word)
         if letter_representation not in gaddag.SCRABBLE_CORPUS:
-            raise ValueError("{0} is not a valid word in the TWL06 Scrabble dictionary".format(letter_representation))
+            raise ValueError("{0} is not a valid word in the {1}".format(letter_representation, SCRABBLE_CORPUS_NAME))
         
     def validate_nonzero_tiles(self, tiles):
         if len(tiles) == 0:
@@ -210,32 +211,33 @@ class Move:
         (2) If no moves are possible, log that the computer exchanged all tiles in rack 
         (3) If no tiles are left, log that the computer passed 
     '''
-    def attempt_computer_move(self, player, board, bag):        
-        self.find_highest_scoring_word(player.rack, board)
-        if not self.self.result["success"]:
+    def attempt_computer_move(self, board, bag, player):        
+        self.find_highest_scoring_word(board, player.rack)
+        if not self.result["success"]:
             if bag.has_tiles_left():
                 num_tiles_to_exchange = min(bag.num_tiles_left(), rack.Rack.MAX_NUM_TILES)
-                log_success_exchanged(player.rack.get_n_tiles(num_tiles_to_exchange))
+                self.log_success_exchanged(player.rack.get_n_tiles(num_tiles_to_exchange))
             else:
-                log_success_move.passed()
+                self.log_success_move.passed()
                 
 
     ### COMPUTER FINDING HIGHEST SCORING MOVE ###
     def find_highest_scoring_word(self, board, rack):
-        for (hook_row, hook_col) in valid_hook_spots:
+        for (hook_row, hook_col) in self.all_hook_spots:
             self.find_all_words_at_hook_location(board, rack, location.Location(hook_row, hook_col))
     
     def find_all_words_at_hook_location(self, board, rack, hook_location):
         # First find all Move.HORIZONTAL words 
-        path_on_board = Path(board, hook_location, hook_location, Move.HORIZONTAL, Move.PREFIX_OFFSET)
-        tile_builder = TileBuilder(rack, [], [])
+        path_on_board = Move.Path(self, board, hook_location, hook_location, Move.HORIZONTAL, Move.PREFIX_OFFSET)
+        tile_builder = Move.TileBuilder(rack, [], [])
         self.build_words(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
         
         # Then find all Move.VERTICAL words 
-        path_on_board = Path(board, hook_location, hook_location, Move.VERTICAL, Move.PREFIX_OFFSET)
-        tile_builder = TileBuilder(rack, [], [])
+        path_on_board = Move.Path(self, board, hook_location, hook_location, Move.VERTICAL, Move.PREFIX_OFFSET)
+        tile_builder = Move.TileBuilder(rack, [], [])
         self.build_words(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
-    
+   
+   
     # Recursively build up words by walking down the gaddag and board
     def build_words(self, node, path, tile_builder):
         if path.hit_previous_hook_spot() or path.outside_board():
@@ -250,8 +252,7 @@ class Move:
                     new_tile_builder = tile_builder.add_tile(curr_tile)
                     log_success_computer_placed(new_tile_builder)
             else:
-                (row, col) = curr_location.get_tuple() 
-                if letter in self.all_crossword_scores[(row, col)].keys() and tile_builder.rack_has_letter(letter) and path.has_room():
+                if path.letter_in_all_crossword_scores(letter) and tile_builder.rack_has_letter(letter) and path.has_room():
                     new_tile_builder = tile_builder.use_tile_in_rack(letter)
                     log_success_computer_placed(new_tile_builder)
                     
@@ -262,7 +263,7 @@ class Move:
                 # before starting the suffix, check that there are no tiles before the first tile in our word (which would imply this is not actually the first tile) 
                 if path.has_room():
                     new_path = path.switch_to_suffix()
-                    self.get_words(node.edges[letter], new_path, tile_builder) 
+                    self.build_words(node.edges[letter], new_path, tile_builder) 
             
             # now try to use a tile already on the board
             elif path.has_board_tile():
@@ -270,68 +271,73 @@ class Move:
                 if curr_tile.letter == letter:
                     new_tile_builder = tile_builder.add_tile(curr_tile)
                     new_path = path.move_one_square()
-                    self.get_words(node.edges[letter], new_path, new_tile_builder) 
+                    self.build_words(node.edges[letter], new_path, new_tile_builder) 
             
             # otherwise, try to use a tile from the rack, constrained by it forming a valid crossword 
             else:
-                (row, col) = curr_location.get_tuple() 
-                if letter in self.all_crossword_scores[(row, col)].keys() and tile_builder.rack_has_letter(letter):
+                if path.letter_in_all_crossword_scores(letter) and tile_builder.rack_has_letter(letter):
                     new_tile_builder = tile_builder.use_tile_in_rack(letter)
-                    new_board_path = board_path.move_one_square()
-                    self.get_words(node.edges[letter], new_board_path, new_tile_builder) 
+                    new_board_path = path.move_one_square()
+                    self.build_words(node.edges[letter], new_board_path, new_tile_builder) 
                     
                     
     class Path:
         # direction = {Move.HORIZONTAL, Move.VERTICAL} -- i.e. should I navigate along the row or along the columns 
         # offset = {Move.PREFIX_OFFSET, Move.SUFFIX_OFFSET} -- i.e. am I moving left/up (building up the prefix) or right/down (building up the suffix) 
-        def __init__(self, board, hook_location, curr_location, direction, offset):
+        def __init__(self, move, board, hook_location, curr_location, direction, offset):
+            self.move = move 
             self.board = board 
             self.hook_location = hook_location 
             self.curr_location = curr_location 
             self.direction = direction 
-            self.offset = offset 
+            self.offset = offset
             
         ### READ FUNCTIONS (nothing modified so no new path is returned) ###
         def has_board_tile(self):
-            return board.has_tile(self.curr_location)
+            return self.board.has_tile(self.curr_location)
             
         def get_board_tile(self):
-            return board.get_tile(self.curr_location) 
+            return self.board.get_tile(self.curr_location) 
         
-        def rack_has_letter(self, letter):
-            return self.rack.contains_letter(letter) 
+        # REFACTOR: this is the only way to allow access between Path class and all_crossword_scores = instance variable in Move class 
+        def letter_in_all_crossword_scores(self, letter):
+            (row, col) = self.curr_location.get_tuple()
+            return letter in self.move.all_crossword_scores[self.direction][(row, col)].keys()   
             
-        # only if we hit a PREVIOUS hook spot; hence the offset must be going left/up (Move.PREFIX_OFFSET) 
-        def hit_previous_hook_spot(self):
-            return curr_location != hook_location and offset == Move.PREFIX_OFFSET and curr_location.get_tuple() in self.all_hook_spots
-        
+        ### BOUNDARY CHECKS ###
         # check if we've moved passed the board boundaries
         def outside_board(self):
-            (row, col) = curr_location.get_tuple()
+            (row, col) = self.curr_location.get_tuple()
             return row < self.board.MIN_ROW or row >= self.board.MAX_ROW or col < self.board.MIN_COL or col >= self.board.MAX_COL 
             
         # checks if we have room (= no tile on the board)--if we were to continue offsetting in the current direction 
         def has_room(self):
             if self.direction == Move.HORIZONTAL:
-                return self.board.has_tile(self.curr_location.offset(0, offset))
+                return self.board.has_tile(self.curr_location.offset(0, self.offset))
             else: 
-                return self.board.has_tile(self.curr_location.offset(offset, 0))
-
+                return self.board.has_tile(self.curr_location.offset(self.offset, 0))
+        
+        # checks if we hit a PREVIOUS hook spot; hence the offset must be going left/up (Move.PREFIX_OFFSET) 
+        def hit_previous_hook_spot(self):
+            return self.curr_location != self.hook_location and self.offset == Move.PREFIX_OFFSET and self.curr_location.get_tuple() in self.move.all_hook_spots
+        
+        
+            
          ### WRITE FUNCTIONS (path needs to be modified so return a new instance) 
         def switch_to_suffix(self):
             if self.offset != Move.PREFIX_OFFSET:
                 raise ValueError("Can only swith to suffix state from prefix state")
             if self.direction == Move.HORIZONTAL:
-                return Path(self.board, self.hook_location, self.hook_location.offset(0, 1), self.direction, Move.SUFFIX_OFFSET)
+                return Move.Path(self.move, self.board, self.hook_location, self.hook_location.offset(0, 1), self.direction, Move.SUFFIX_OFFSET)
             else:
-                return Path(self.board, self.hook_location, self.hook_location.offset(1, 0), self.direction, Move.SUFFIX_OFFSET)
+                return Move.Path(self.move, self.board, self.hook_location, self.hook_location.offset(1, 0), self.direction, Move.SUFFIX_OFFSET)
          
         def move_one_square(self):
             if self.direction == Move.HORIZONTAL:
-                return Path(self.board, self.hook_location, self.hook_location.offset(0, offset), self.direction, self.offset)
+                return Move.Path(self.move, self.board, self.hook_location, self.hook_location.offset(0, self.offset), self.direction, self.offset)
             else:
-                return Path(self.board, self.hook_location, self.hook_location.offset(offset, 0), self.direction, self.offset)
-                
+                return Move.Path(self.move, self.board, self.hook_location, self.hook_location.offset(self.offset, 0), self.direction, self.offset)
+        
     class TileBuilder:
         def __init__(self, rack, tile_word, tiles_used):
             self.rack = rack.copy_rack()
@@ -342,17 +348,18 @@ class Move:
             return self.rack.contains_letter(letter)
             
         def use_tile_in_rack(self, letter):
+            
             new_rack = self.rack.copy_rack()
-            removed_tile = new_rack.remove_one_tile(letter)
+            removed_tile = new_rack.remove_one_tile_with_letter(letter)
             
             new_tile_word = self.tile_word + [removed_tile]
             new_tiles_used = self.tiles_used + [removed_tile]
-            return TileBuilder(new_rack, new_tile_word, new_tiles_used) 
+            return Move.TileBuilder(new_rack, new_tile_word, new_tiles_used) 
             
         def add_tile(self, tile):
-            return TileBuilder(self.rack, self.tile_word + [tile], self.tiles_used + [tile])
+            return Move.TileBuilder(self.rack, self.tile_word + [tile], self.tiles_used + [tile])
         
-               
+        
     '''
     SHARED METHODS BETWEEN COMPUTER AND HUMAN
     '''

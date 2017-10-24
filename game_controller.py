@@ -1,6 +1,5 @@
 
 import gaddag 
-import corpus
 import board 
 import bag
 import player 
@@ -8,6 +7,7 @@ import player
 import move 
 import tile 
 import location 
+SCRABBLE_GADDAG = gaddag.read_gaddag_full()
 
 #global data structures so that this only loads once to server all requests 
 #REFACTOR check if memory loaded multiple times  
@@ -109,13 +109,11 @@ if __name__ == "__main__":
         print(key)
         print(serial[key])
         print("------------------------------\n")
-    global SCRABBLE_GADDAG 
-    # SCRABBLE_GADDAG = gaddag.read_gaddag_full(SCRABBLE_CORPUS)
     
     game.human_player.rack.remove_one_tile_random()
     game.human_player.rack.add_tile(tile.Tile("A", game.human_player, location.Location(7, 7)))
     game.human_player.rack.add_tile(tile.Tile("T", game.human_player, location.Location(7, 8)))
-    # print(game.human_player.rack.serialize())
+    
     game.process_human_move(move.Move.PLACE_TILES, game.human_player.rack.tiles[-2:])
     serial = game.serialize()
     for key in serial.keys():

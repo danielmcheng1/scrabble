@@ -4,9 +4,12 @@ import string
 import gaddag_node 
 import corpus 
 
-SCRABBLE_CORPUS = corpus.load_corpus()
 # original implementation: 1820 megabytes for loading official Scrabbl dictionary into gaddag (178 k words)
 # compressed suffixes for a given word and added eow letter sets: 854 mb!
+
+# use gaddag module to hold global variable pointing to corpus 
+SCRABBLE_CORPUS = corpus.load_corpus()
+SCRABBLE_CORPUS_NAME = "TWL06 Official Scrabble Dictionary"
 
 # writing and reading gaddag (precompute/preload ahead of time) 
 def write_gaddag_full():

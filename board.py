@@ -44,7 +44,7 @@ class Board:
             return True 
             
     def get_tile(self, location):
-        return self.tiles_placed[location.get_row(), location.get_col()]
+        return self.tiles_placed[location.get_row()][location.get_col()]
         
     ### BONUS SQUARE UTILITY METHODS ### 
     def get_bonus(self, row, col):

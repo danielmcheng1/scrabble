@@ -6,11 +6,15 @@ class Rack:
     def __init__(self, list_of_tiles):
         self.tiles = list_of_tiles 
     
-    def copy_rack(self):
-        return Rack(self.tiles[:])
-    
+    ### GET / READ FUNCTIONS ###
+    def has_tiles_left(self):
+        return len(self.tiles) > 0        
+        
+    def get_letters(self):
+        return [tile.letter for tile in self.tiles]
+        
     def get_letter_set(self):
-        return set([tile.letter for tile in self.tiles]) 
+        return set(self.get_letters()) 
 
     def get_n_tiles(self, n):
         return self.tiles[0:n]
@@ -19,25 +23,31 @@ class Rack:
         return len(self.tiles)
         
     def contains_letter(self, letter):
-        return letter in self.tiles 
+        return letter in self.get_letters()
     
-    def has_tiles_left(self):
-        return len(self.tiles) > 0
-    
+    ### WRITE / MODIFY FUNCTIONS ###
+    def copy_rack(self):
+        return Rack(self.tiles[:])
+        
     def add_tile(self, tile):
         self.tiles.append(tile)
+        
     def remove_one_tile_random(self):
         removed_tile = self.tiles[-1]
         self.tiles = self.tiles[:-1]
         return removed_tile
         
     def remove_one_tile_with_letter(self, letter):
+        print("\n" + str(self.serialize()))
+        
         new_tiles = []
         removed_tile = None 
-        for tile in new_tiles:
-            if tile.letter == letter and removed_tile is not None:
+        for tile in self.tiles:
+            if tile.letter == letter and removed_tile is None:
+                print("removed tile: {0}".format(removed_tile))
                 removed_tile = tile 
             else:
+                print("not removed tile: {0}".format(removed_tile))
                 new_tiles.append(tile)
         if removed_tile is None:
             raise ValueError("Failed to find tile with letter " + letter)
