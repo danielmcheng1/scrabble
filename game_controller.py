@@ -126,7 +126,7 @@ if __name__ == "__main__":
     game.human_player.rack.add_tile(tile.Tile("L", game.human_player, location.Location(7, 11)))
     game.human_player.rack.add_tile(tile.Tile("E", game.human_player, location.Location(7, 12)))
     
-    game.process_human_move(move.Move.PLACE_TILES, game.human_player.rack.tiles[-3:])
+    game.process_human_move(move.Move.PLACE_TILES, game.human_player.rack.tiles[-6:])
     game.print_serialize()        
         
     game.process_human_move(move.Move.PASS) 

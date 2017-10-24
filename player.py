@@ -28,7 +28,7 @@ class Player:
         bag.shuffle_bag() 
         exchanged_tiles = []
         for tile in tiles:
-            exchanged_tile = self.rack.remove_one_tile_with_letter(tile.letter)
+            exchanged_tile = self.rack.use_one_tile_with_letter(tile.letter)
             exchanged_tiles.append(exchanged_tile.remove_player())
             
             self.rack.add_tile(bag.draw_tile().change_player(self))

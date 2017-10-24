@@ -53,18 +53,13 @@ class Move:
         self.print_tile_list(sorted_tiles) 
         try:
             self.validate_nonzero_tiles(sorted_tiles)
-            print("1")
             self.validate_in_one_row_or_column(sorted_tiles)
-            print("2")
             self.validate_tiles_hook_onto_existing(sorted_tiles)
-            print("3")
         except Exception as e:
             self.log_error_human(e)
             return 
          
-        print("4")
         direction = self.get_direction(sorted_tiles) 
-        print("direction: " + str(direction))
         start_location = self.find_start_of_word(sorted_tiles[0].location, direction, board)
         num_tiles = len(sorted_tiles) 
         
@@ -73,7 +68,6 @@ class Move:
         tile_index = 0 
         tile_word = [] 
         while True:
-            # print("Location: {0}, tile_index: {1}, tile_location: {2}".format(current_location, tile_index, sorted_tiles[tile_index].location))
             # existing board tile 
             if board.has_tile(current_location):
                 tile_word.append(board.get_tile(current_location)) 
@@ -118,7 +112,7 @@ class Move:
     def validate_word_in_dictionary(self, word):
         letter_representation = "".join(word)
         if letter_representation not in gaddag.SCRABBLE_CORPUS:
-            raise ValueError("{0} is not a valid word in the {1}".format(letter_representation, SCRABBLE_CORPUS_NAME))
+            raise ValueError("{0} is not a valid word in the {1}".format(letter_representation, gaddag.SCRABBLE_CORPUS_NAME))
         
     def validate_nonzero_tiles(self, tiles):
         if len(tiles) == 0:
@@ -360,7 +354,7 @@ class Move:
         def use_tile_in_rack(self, letter, path):
             # tile is moved from rack and "placed" on the board (temporarily) 
             new_rack = self.rack.copy_rack()
-            removed_tile = new_rack.remove_one_tile_with_letter(letter)
+            removed_tile = new_rack.use_one_tile_with_letter(letter)
             removed_tile.change_location(path.curr_location)
             
             # offset determines if we are adding to the prefix or suffix 
@@ -590,15 +584,19 @@ class Move:
         
         
     def serialize_result(self):
-        rv = {"player": self.result["player"].serialize_type(), \
+        # exception for the detail key because we have to apply nested serialization (could refactor with proper serialization for all other data elements 
+        detail = {}
+        for key in self.result["detail"]:
+            if key == "tiles_used":
+                detail["tiles_used"] = [tile.serialize() for tile in self.result["detail"]["tiles_used"]]
+            else:
+                detail[key] = self.result["detail"]["tiles_used"]
+                
+        return {"player": self.result["player"].serialize_type(), \
                 "action": self.result["action"], \
                 "success": str(self.result["success"]), \
-                "detail": self.result["detail"], \
+                "detail": detail, \
                 "error": self.result["error"]}
-        print(rv["detail"]["tiles_used"])
-        if "tiles_used" in rv["detail"]:
-            rv["detail"]["tiles_used"] = [tile.serialize() for tile in rv["detail"]["tiles_used"]]
-        return rv
     
     # printing functions for debugging 
     PRINT_DIVIDER = "-------------------------------"
