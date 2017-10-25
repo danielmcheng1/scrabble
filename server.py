@@ -124,7 +124,7 @@ def play_game():
   
 if __name__ == '__main__':
     # Production 
-    # app.run(host='0.0.0.0', port=8000)
+    app.run(host='0.0.0.0', port=8000)
     # Dev 
-    app.run()
+    # app.run()
     

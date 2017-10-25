@@ -396,7 +396,7 @@ class Move:
     ### HOOK SPOT GENERATION ###
     # hook spots: list of (row, col) where a new word could be placed
     def pull_all_hook_spots(self, local_board):
-        print("NUM WORDS  PLACED")
+        print("NUM WORDS PLACED")
         print(local_board.num_words_placed)
         valid_hook_spots = []
         for row in range(board.Board.MIN_ROW, board.Board.MAX_ROW):
@@ -471,11 +471,11 @@ class Move:
             else:
                 # create a tile for this temporary crossword letter since we finding all potential crosswords  
                 if current_location == start_location:
-                    tile_crossword.append(tile.Tile(letter, self.player, location))
+                    tile_crossword.append(tile.Tile(letter, None, location))
                 # no more board tiles means we've hit the end of the crossword 
                 else:
                     break 
-            if direction == Move.HORIZONTAL:
+            if crossword_direction == Move.HORIZONTAL:
                 location = location.offset(0, 1)
             else:
                 location = location.offset(1, 0)
@@ -483,6 +483,7 @@ class Move:
         #no crosswords were formed, so it is ok to place this tile here
         if len(tile_crossword) == 1:
             return 0
+            
         # check if we formed a valid word 
         try:
             self.validate_tile_word_in_dictionary(tile_crossword)              
