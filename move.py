@@ -242,36 +242,36 @@ class Move:
             if path.has_board_tile():
                 curr_tile = path.get_board_tile()
                 if curr_tile.letter == letter and path.has_room():
-                    print("Computer found a word picking up a board tile: {0} onto {1}".format(letter, "".join([tile.letter for tile in tile_builder.tile_word])))
+                    # print"Computer found a word picking up a board tile: {0} onto {1}".format(letter, "".join([tile.letter for tile in tile_builder.tile_word])))
                     for tile in tile_builder.tile_word:
-                        print(tile.serialize())
+                        pass # printtile.serialize())
                     new_tile_builder = tile_builder.use_tile_on_board(curr_tile, path)
                     score = self.calc_word_score(new_tile_builder.tile_word, path.board)
                     self.log_success_computer_placed(new_tile_builder.tile_word, new_tile_builder.tiles_used, score)
                 '''else:
                     if not curr_tile.letter == letter:
-                        print("Did not complete word, board tile conflicted with {0}!".format(letter))
+                        # print"Did not complete word, board tile conflicted with {0}!".format(letter))
                     else:
-                        print("Did not complete word, board tile matched but path had no room for letter {0}!".format(letter))
+                        # print"Did not complete word, board tile matched but path had no room for letter {0}!".format(letter))
                     for tile in tile_builder.tile_word:
-                        print("  {0}".format(tile.serialize()))'''
+                        # print"  {0}".format(tile.serialize()))'''
             else:
                 if path.letter_in_all_crossword_scores(letter) and tile_builder.rack_has_letter(letter) and path.has_room():
-                    print("Computer found a word picking up a rack tile: {0} onto {1}".format(letter, "".join([tile.letter for tile in tile_builder.tile_word])))
+                    # print"Computer found a word picking up a rack tile: {0} onto {1}".format(letter, "".join([tile.letter for tile in tile_builder.tile_word])))
                     for tile in tile_builder.tile_word:
-                        print(tile.serialize())
+                        pass # printtile.serialize())
                     new_tile_builder = tile_builder.use_tile_in_rack(letter, path)
                     score = self.calc_word_score(new_tile_builder.tile_word, path.board)
                     self.log_success_computer_placed(new_tile_builder.tile_word, new_tile_builder.tiles_used, score)
                 '''else:
                     if not path.letter_in_all_crossword_scores(letter):
-                        print("Did not complete word, {0} not in all crossword scores".format(letter))
+                        # print"Did not complete word, {0} not in all crossword scores".format(letter))
                     elif not tile_builder.rack_has_letter(letter):
-                        print("Did not complete word, {0} not in rack".format(letter))
+                        # print"Did not complete word, {0} not in rack".format(letter))
                     else:
-                        print("Did not complete word, rack and crossword matched but path did not have room for {0}".format(letter))
+                        # print"Did not complete word, rack and crossword matched but path did not have room for {0}".format(letter))
                     for tile in tile_builder.tile_word:
-                        print("  {0}".format(tile.serialize()))'''
+                        # print"  {0}".format(tile.serialize()))'''
         # now recurse on for all other edges going out from this node
         for letter in node.edges.keys():
             # check if we need to reverse from prefix formation to suffix formation 
@@ -307,8 +307,8 @@ class Move:
             self.curr_location = curr_location 
             self.direction = direction 
             self.offset = offset
-        def print(self):
-            print("@{location}, offset {offset}, going {direction} from {hook}".format(direction = self.direction, hook = self.hook_location, location = self.curr_location, offset = self.offset))
+        def __str__(self):
+            return "@{location}, offset {offset}, going {direction} from {hook}".format(direction = self.direction, hook = self.hook_location, location = self.curr_location, offset = self.offset)
         ### READ FUNCTIONS (nothing modified so no new path is returned) ###
         def has_board_tile(self):
             return self.board.has_tile(self.curr_location)
@@ -359,8 +359,8 @@ class Move:
             self.rack = rack.copy_rack()
             self.tile_word = [tile.copy_tile() for tile in tile_word[:]]
             self.tiles_used = [tile.copy_tile() for tile in tiles_used[:]]
-        def print(self):
-            print("rack : {0}, tile_word: {1}, tiles_used: {2}".format(self.rack.serialize(), self.concatenate_tiles(self.tile_word), self.concatenate_tiles(self.tiles_used)))
+        def __str__(self):
+            return "rack : {0}, tile_word: {1}, tiles_used: {2}".format(self.rack.serialize(), self.concatenate_tiles(self.tile_word), self.concatenate_tiles(self.tiles_used))
         
         def concatenate_tiles(self, tiles):
             return "".join([tile.letter for tile in tiles])
@@ -495,28 +495,28 @@ class Move:
     ### SCORE CALCULATION ###
     # calculate Scrabble score for a word (represented as a list of TILE objects)
     def calc_word_score(self, tile_word, board):
-        print("Entering calc_word_score")
+        # print"Entering calc_word_score")
         for tile in tile_word:
-            print(tile.serialize())
+            pass # printtile.serialize())
             
         if len(tile_word) == 0: 
             return 0 
         direction = self.get_direction(tile_word) 
         start_location = tile_word[0].location 
-        print("start_location is " + str(start_location))
+        # print"start_location is " + str(start_location))
         num_tiles_placed = 0 # if 7 tiles placed, then add bingo bonus 
         crossword_scores = 0 # to keep track of all crossword scores (avoid applying multiplier twice to these)
         total_score = 0 # running total score
         word_multiplier = 1 # running word multiplier (applied at the end)
 
         for i in range(0, len(tile_word)):
-            print("i is " + str(i))
+            # print"i is " + str(i))
             # move to the next location on the board
             if direction == Move.HORIZONTAL:
                 location = start_location.offset(0, i)
             else:
                 location = start_location.offset(i, 0)
-            print("offseting to " + str(location))
+            # print"offseting to " + str(location))
             (row, col) = location.get_tuple()
             
             # only count multipliers for new squares (i.e. multiplier only counts at the time of play) 
@@ -624,14 +624,14 @@ class Move:
     # printing functions for debugging 
     PRINT_DIVIDER = "-------------------------------"
     def print_all_crossword_scores(self):
-        print("\nPrinting all_crossword_scores")
+        # print"\nPrinting all_crossword_scores")
         for direction in self.all_crossword_scores:
             for (x, y) in self.all_crossword_scores[direction]:
-                print(str((x, y)) + " --> " + str(self.all_crossword_scores[direction][(x, y)]))
-        print(Move.PRINT_DIVIDER)
+                pass # printstr((x, y)) + " --> " + str(self.all_crossword_scores[direction][(x, y)]))
+        # printMove.PRINT_DIVIDER)
     def print_tile_list(self, tile_list):
-        print("\nPrinting tile list")
+        # print"\nPrinting tile list")
         for tile in tile_list:
-            print(tile.serialize()) 
-        print(Move.PRINT_DIVIDER)
+            pass # printtile.serialize()) 
+        # printMove.PRINT_DIVIDER)
                         
