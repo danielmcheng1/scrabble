@@ -257,7 +257,7 @@ class Move:
         for letter in node.eow_set:
             if path.has_board_tile():
                 curr_tile = path.get_board_tile()
-                if curr_tile.letter == letter and path.has_room():
+                if curr_tile.letter == letter and path.has_room(tile_builder):
                     # print"Computer found a word picking up a board tile: {0} onto {1}".format(letter, "".join([tile.letter for tile in tile_builder.tile_word])))
                     for tile in tile_builder.tile_word:
                         pass # printtile.serialize())
@@ -272,7 +272,7 @@ class Move:
                     for tile in tile_builder.tile_word:
                         # print"  {0}".format(tile.serialize()))'''
             else:
-                if path.letter_in_all_crossword_scores(letter) and tile_builder.rack_has_letter(letter) and path.has_room():
+                if path.letter_in_all_crossword_scores(letter) and tile_builder.rack_has_letter(letter) and path.has_room(tile_builder):
                     # print"Computer found a word picking up a rack tile: {0} onto {1}".format(letter, "".join([tile.letter for tile in tile_builder.tile_word])))
                     for tile in tile_builder.tile_word:
                         pass # printtile.serialize())
@@ -293,7 +293,7 @@ class Move:
             # check if we need to reverse from prefix formation to suffix formation 
             if letter == gaddag.GADDAG_HOOK:
                 # before starting the suffix, check that there are no tiles before the first tile in our word (which would imply this is not actually the first tile) 
-                if path.has_room():
+                if path.has_room(tile_builder):
                     new_path = path.switch_to_suffix()
                     self.build_words(node.edges[letter], new_path, tile_builder) 
             
@@ -343,12 +343,24 @@ class Move:
             (row, col) = self.curr_location.get_tuple()
             return row < self.board.MIN_ROW or row >= self.board.MAX_ROW or col < self.board.MIN_COL or col >= self.board.MAX_COL 
             
-        # checks if we have room (= no tile on the board)--if we were to continue offsetting in the current direction 
-        def has_room(self):
+        # checks if we have room (= no tile on the board) 
+        def has_room(self, tile_builder):
             if self.direction == Move.HORIZONTAL:
-                return not self.board.has_tile(self.curr_location.offset(0, self.offset))
+                # if we were to continue offsetting in the current direction
+                if self.board.has_tile(self.curr_location.offset(0, self.offset)):
+                    return False 
+                # check the other end (could happen if the prefix is the entire word 
+                if self.board.has_tile(self.curr_location.offset(0, -1 * self.offset * tile_builder.num_tiles_used())):
+                    return False
+                return True 
             else: 
-                return not self.board.has_tile(self.curr_location.offset(self.offset, 0))
+                # if we were to continue offsetting in the current direction
+                if self.board.has_tile(self.curr_location.offset(self.offset, 0)):
+                    return False 
+                # check the other end (could happen if the prefix is the entire word 
+                if self.board.has_tile(self.curr_location.offset(-1 * self.offset * tile_builder.num_tiles_used(), 0)):
+                    return False
+                return True 
         
         # checks if we hit a PREVIOUS hook spot; hence the offset must be going left/up (Move.PREFIX_OFFSET) 
         def hit_previous_hook_spot(self):
@@ -378,6 +390,9 @@ class Move:
         def __str__(self):
             return "rack : {0}, tile_word: {1}, tiles_used: {2}".format(self.rack.serialize(), self.concatenate_tiles(self.tile_word), self.concatenate_tiles(self.tiles_used))
         
+        def num_tiles_used(self):
+            return len(tiles_used) 
+            
         def concatenate_tiles(self, tiles):
             return "".join([tile.letter for tile in tiles])
             
