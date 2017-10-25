@@ -71,9 +71,9 @@ class GameController:
         if self.num_consecutive_turns_passed == GameController.MAX_CONSECUTIVE_TURNS_PASSED: 
             return "Game over: {0} turns have ended in passes".format(GameController.MAX_CONSECUTIVE_TURNS_PASSED)
         if not self.bag.has_tiles_left():
-            if len(self.human_player.rack) == 0: 
+            if not self.human_player.rack.has_tiles_left(): 
                 return "Game over: {0} used up all tiles in your rack, and no tiles are left in the bag".format("You")
-            if len(self.computer_player.rack) == 0:
+            if not self.computer_player.rack.has_tiles_left():
                 return "Game over: {0} used up all tiles in its rack, and no tiles are left in the bag".format("Computer")
         return ""
            
@@ -133,9 +133,13 @@ if __name__ == "__main__":
     game.human_player.rack.add_tile(tile.Tile("E", game.human_player, location.Location(7, 12)))
     
     game.process_human_move(move.Move.PLACE_TILES, game.human_player.rack.tiles[-6:])
-    game.print_serialize()        
-        
-    game.process_human_move(move.Move.PASS) 
-    game.print_serialize()   
-    game.process_human_move(move.Move.PASS) 
-    game.print_serialize()
+    game.print_serialize()    
+    i = 1
+    while not game.game_has_ended():    
+        if i % 2:
+            game.process_human_move(move.Move.PASS) 
+        else:
+            n = i % 6
+            game.process_human_move(move.Move.EXCHANGE_TILES, game.human_player.rack.get_n_tiles(i % 6 + 1))
+        game.print_serialize() 
+        i += 1
