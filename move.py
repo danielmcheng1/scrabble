@@ -322,7 +322,7 @@ class Move:
                 if self.board.has_tile(self.curr_location.offset(0, self.offset)):
                     return False 
                 # check the other end (could happen if the prefix is the entire word). plus one because one more tile will be placed to complete the word
-                if self.board.has_tile(self.curr_location.offset(0, -1 * self.offset * (tile_builder.num_tiles_used() + 1))):
+                if self.board.has_tile(self.curr_location.offset(0, -1 * self.offset * tile_builder.num_tiles_used() - self.offset)):
                     return False
                 return True 
             else: 
@@ -330,7 +330,7 @@ class Move:
                 if self.board.has_tile(self.curr_location.offset(self.offset, 0)):
                     return False 
                 # check the other end (could happen if the prefix is the entire word. plus one because one more tile will be placed to complete the word 
-                if self.board.has_tile(self.curr_location.offset(-1 * self.offset * (tile_builder.num_tiles_used() + 1), 0)):
+                if self.board.has_tile(self.curr_location.offset(-1 * self.offset * tile_builder.num_tiles_used() - self.offset, 0)):
                     return False
                 return True 
         
