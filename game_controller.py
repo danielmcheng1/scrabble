@@ -1,5 +1,7 @@
 
 import gaddag 
+SCRABBLE_GADDAG = gaddag.read_gaddag_full()
+
 import board 
 import bag
 import player 
@@ -7,7 +9,6 @@ import player
 import move 
 import tile 
 import location 
-SCRABBLE_GADDAG = gaddag.read_gaddag_full()
 
 #global data structures so that this only loads once to server all requests 
 #REFACTOR check if memory loaded multiple times  
@@ -25,7 +26,8 @@ class GameController:
         self.human_player.draw_tiles_at_start_of_game(self.bag)
         self.computer_player.draw_tiles_at_start_of_game(self.bag)
         
-        self.last_move = None
+        # initiate last move to computer passing the previous round 
+        self.last_move = move.Move(self.board, self.bag, self.computer_player, move.Move.PASS)
         
     def process_human_move(self, action, tiles = None):
         # do not process further if the game has already ended 

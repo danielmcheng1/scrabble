@@ -73,17 +73,25 @@ function postData(data) {
         contentType: 'application/json; charset=utf-8'
     });
 };
-
+function loadNewGame() {
+    return $.ajax({
+        type: 'POST',
+        url: $SCRIPT_ROOT + '/loadNewGame',
+        data: JSON.stringify(''),
+        dataType: 'json',
+        contentType: 'application/json; charset=utf-8'
+    });        
+};
 $("#restartGame").click (function(event) {
     if (!$(this).hasClass("buttonClicked")) {
         $(this).addClass("buttonClicked");
-        postData({"Restart Game": "Y"}).done(handleData); 
+        loadNewGame().done(handleData); 
     };
 });
 
 $(document).ready(function() {
     playBackgroundMusic();
-    postData({}).done(handleData); 
+    loadNewGame().done(handleData); 
 });
     
     
@@ -106,7 +114,6 @@ function handleData(data) {
         //enter key or mouse click 
         if (event.which === 13 || event.type === 'click') {
             if (!$(this).hasClass("buttonClicked")) {
-                //socket.emit('moveDoneHuman', {"last_move": {"action": "Try Placing Tiles", "player": "Human", "detail": placedTilesHuman}});
                 postData({"last_move": {"action": "Try Placing Tiles", "player": "Human", "detail": placedTilesHuman}}).done(handleData);
                 $(this).addClass("buttonClicked");
             };
@@ -126,7 +133,6 @@ function handleData(data) {
                 }).filter(function(index, elem) {
                     return elem != "";
                 }).toArray();
-                //socket.emit('moveDoneHuman', {"last_move": {"action": "Try Exchanging Tiles", "player": "Human", "detail": toExchange}});
                 postData({"last_move": {"action": "Try Exchanging Tiles", "player": "Human", "detail": toExchange}}).done(handleData);
                 $(this).addClass("buttonClicked");
             };
@@ -479,7 +485,7 @@ function parseTilesLeft(tilesLeft) {
     return tilesLeft + " " + tileNoun + " left in the bag";
 }
 function parseLastMove(lastMove) {
-    if (lastMove!= undefined) {
+    if (lastMove != {}) {
         if (lastMove["action"].toUpperCase() == "MADE ILLEGAL MOVE") {
             return "Illegal Move! " + lastMove["error"];
         };
