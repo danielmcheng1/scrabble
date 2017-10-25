@@ -26,6 +26,9 @@ class Move:
         # save hook spots and crossword spots -- used to determine validity throughout 
         self.all_hook_spots = self.pull_all_hook_spots(board)
         self.all_crossword_scores = self.pull_all_crossword_scores(board, player.rack)
+        print("Crossword scores")
+        print(self.all_crossword_scores)
+        
         print("Human" if player.is_human else "Computer")
         print(player.rack.serialize())
          
@@ -149,6 +152,7 @@ class Move:
     
     def get_direction(self, sorted_tiles):
         (used_rows, used_cols) = self.find_used_rows_and_cols(sorted_tiles)
+        print("get_direction: used {0} rows and {1} cols".format(used_rows, used_cols))
         if len(used_rows) == 1:
             # exception: if only one tile is placed, check if the word formed is actually going Move.VERTICALly 
             if len(used_cols) == 0 and self.has_tile_above_or_below(sorted_tiles[0], board):
@@ -157,6 +161,7 @@ class Move:
                 direction = Move.HORIZONTAL 
         else: 
             direction = Move.VERTICAL 
+        print("direction is " + "horizontal" if direction == Move.HORIZONTAL else "vertical")
         return direction 
         
     def find_used_rows_and_cols(self, tiles):
@@ -227,6 +232,10 @@ class Move:
             self.find_all_words_at_hook_location(board, rack, location.Location(hook_row, hook_col))
         
     def find_all_words_at_hook_location(self, board, rack, hook_location):
+        print("Gaddag start ")
+        # game_controller.SCRABBLE_GADDAG.start_node.print_node("", "")
+        print(game_controller.SCRABBLE_GADDAG.start_node.edges.keys())
+        
         # First find all Move.HORIZONTAL words 
         path_on_board = Move.Path(self, board, hook_location, hook_location, Move.HORIZONTAL, Move.PREFIX_OFFSET)
         tile_builder = Move.TileBuilder(rack, [], [])
@@ -432,7 +441,6 @@ class Move:
             # keys = valid letter for that location 
             # values = score for that crossword  
     def pull_all_crossword_scores(self, local_board, rack):
-        print("pull_all_crossword_scores")
         
         crossword_scores_for_move_horizontal = {}
         crossword_scores_for_move_vertical = {}

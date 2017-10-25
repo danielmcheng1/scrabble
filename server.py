@@ -13,7 +13,7 @@ login_manager.init_app(app)
 
 
 ALL_SESSIONS = {}
-@app.route('/loadNewGame',methods=['POST'])
+@app.route('/loadNewGame',methods=['GET', 'POST'])
 def load_new_game():
     print('Logged in as: ' + flask_login.current_user.id)
     session_id = flask_login.current_user.id
@@ -24,7 +24,7 @@ def load_new_game():
     return flask.jsonify(game.serialize())
 
 
-@app.route('/processMove',methods=['POST'])
+@app.route('/processMove',methods=['GET', 'POST'])
 def process_move():
     print('---------------- Logged in as: ' + flask_login.current_user.id)
     session_id = flask_login.current_user.id
