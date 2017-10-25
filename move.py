@@ -396,6 +396,8 @@ class Move:
     ### HOOK SPOT GENERATION ###
     # hook spots: list of (row, col) where a new word could be placed
     def pull_all_hook_spots(self, local_board):
+        print("NUM WORDS  PLACED")
+        print(local_board.num_words_placed)
         valid_hook_spots = []
         for row in range(board.Board.MIN_ROW, board.Board.MAX_ROW):
             for col in range(board.Board.MIN_COL, board.Board.MAX_COL):
@@ -406,9 +408,7 @@ class Move:
     
     def is_valid_hook_spot(self, local_board, location):
         if local_board.num_words_placed == 0: 
-            if location.get_row() == board.Board.CENTER_ROW: # and col <= board.Board.CENTER_COL and col > board.Board.CENTER_COL - rack.Rack.MAX_NUM_TILES:
-                return True 
-            if location.get_col() == board.Board.CENTER_COL: # and row <= board.Board.CENTER_ROW and row > board.Board.CENTER_ROW - rack.Rack.MAX_NUM_TILES:
+            if location.get_row() == board.Board.CENTER_ROW and location.get_col() == board.Board.CENTER_COL:
                 return True 
             return False 
         else:
@@ -627,16 +627,20 @@ class Move:
     PRINT_DIVIDER = "-------------------------------"
     def print_all_hook_spots(self):
         print("HOOK SPOTS", file=sys.stderr)
+        print(self.all_hook_spots)
+        return 
         for hook_spot in self.all_hook_spots:
             print(hook_spot, file=sys.stderr)
         print(Move.PRINT_DIVIDER, file=sys.stderr)
         
     def print_all_crossword_scores(self):
-        # print"\nPrinting all_crossword_scores")
+        print("\nPrinting all_crossword_scores")
+        print(self.all_crossword_scores)
+        return 
         for direction in self.all_crossword_scores:
             for (x, y) in self.all_crossword_scores[direction]:
-                pass # printstr((x, y)) + " --> " + str(self.all_crossword_scores[direction][(x, y)]))
-        # printMove.PRINT_DIVIDER)
+                print(str((x, y)) + " --> " + str(self.all_crossword_scores[direction][(x, y)]))
+        print(Move.PRINT_DIVIDER)
     def print_tile_list(self, tile_list):
         # print"\nPrinting tile list")
         for tile in tile_list:
