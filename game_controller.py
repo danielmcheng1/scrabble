@@ -1,6 +1,6 @@
 
 import gaddag 
-#SCRABBLE_GADDAG = gaddag.read_gaddag_full()
+SCRABBLE_GADDAG = gaddag.read_gaddag_full()
 
 import board 
 import bag
@@ -39,8 +39,9 @@ class GameController:
         if self.last_move.succeeded():
             # implement the attempted human move 
             self.implement_last_move() 
-            if 1 == 0:
-                # now find the optimal computer move is 
+            
+            # now find the optimal computer move
+            if 1 == 1:
                 self.last_move = move.Move(self.board, self.bag, self.computer_player)
                 
                 # and implement that computer move 

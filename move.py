@@ -358,7 +358,7 @@ class Move:
         # REFACTOR: this is the only way to allow access between Path class and all_crossword_scores = instance variable in Move class 
         def letter_in_all_crossword_scores(self, letter):
             (row, col) = self.curr_location.get_tuple()
-            return letter in self.move.all_crossword_scores[self.direction][(row, col)].keys()   
+            return letter in self.move.all_crossword_scores[self.direction * -1][(row, col)].keys()   
             
         ### BOUNDARY CHECKS ###
         # check if we've moved passed the board boundaries
@@ -511,7 +511,7 @@ class Move:
         # find the start location for this crossword
         crossword_direction = orig_direction * -1
         start_location = self.find_start_of_word(location, crossword_direction, board)
-        
+        print("PULLING CROSSWORD SCORE: {0}, start location is {1}, orig_direction: {2}".format(location, start_location, orig_direction))
             
         # generate the crossword 
         tile_crossword = []
