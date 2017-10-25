@@ -26,8 +26,6 @@ class Move:
         # save hook spots and crossword spots -- used to determine validity throughout 
         self.all_hook_spots = self.pull_all_hook_spots(board)
         self.all_crossword_scores = self.pull_all_crossword_scores(board, player.rack)
-        self.print_all_crossword_scores()
-        self.print_all_hook_spots()
         
          
         # logs (1) if the human's attempted move was valid, and (2) the optimal move calculated by the computer 
@@ -131,8 +129,6 @@ class Move:
             raise ValueError("You can only place in one row or column")    
         
     def validate_tiles_hook_onto_existing(self, tiles):
-        for tile in tiles:
-            print(tile.serialize())
         intersection = set(self.all_hook_spots).intersection([tile.location.get_tuple() for tile in tiles])
         if len(intersection) == 0:
             raise ValueError("Your placed tiles must hook onto an existing tile on the board")
@@ -502,10 +498,7 @@ class Move:
     # calculate Scrabble score for a word (represented as a list of TILE objects)
     # include_crosswords flag because we only compute crossword scores for actual placement -- 
         # when using this method for caching all possible crossword scores, we do not want to calculate crossword scores for those cached crosswords
-    def calc_word_score(self, tile_word, board, include_crosswords = True):
-        for tile in tile_word:
-            print(tile.serialize())
-            
+    def calc_word_score(self, tile_word, board, include_crosswords = True):            
         if len(tile_word) == 0: 
             return 0 
         direction = self.get_direction(tile_word, board) 
@@ -590,7 +583,6 @@ class Move:
     def log_success_computer_placed(self, tile_word, tiles_used, score):
         self.result["success"] = True 
         self.result["action"] = Move.PLACE_TILES
-        print("log_success_computer_placed: {0} {1} {2}".format("".join([tile.letter for tile in tile_word]), "".join([tile.letter for tile in tiles_used]), score))
         if score > self.result["detail"].get("score", -1):
             self.result["detail"]["score"] = score 
             self.result["detail"]["word"] = "".join([tile.letter for tile in tile_word])
