@@ -19,6 +19,7 @@ def load_new_game():
     session_id = flask_login.current_user.id
     game = game_controller.GameController()
     print('Returning')
+    
     ALL_SESSIONS[session_id] = game
     return flask.jsonify(game.serialize())
 
@@ -31,10 +32,11 @@ def process_move():
     user_data = flask.request.json if flask.request.json is not None else {}
     print('-----------------Received json:\n {0}'.format(user_data), file=sys.stderr)
     
-    game = ALL_SESSIONS[session_id]
-    game.process_human_move("Pass turn")
     
-    print('--------------- SENDING JSON')
+    game = ALL_SESSIONS[session_id]
+    game.process_human_move(user_data["action"], game.front_end_data_to_tiles(user_data))
+    
+    print('--------------- SENDING JSON BACK')
     game.print_serialize()
     return flask.jsonify(game.serialize())
     # session_data = SCRABBLE_APPRENTICE_DATA.setdefault(session_id, {})

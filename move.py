@@ -13,7 +13,7 @@ import game_controller
 class Move: 
     PLACE_TILES = "Place tiles"
     EXCHANGE_TILES = "Exchange tiles"
-    PASS = "Pass turn"
+    PASS = "Pass"
     MADE_ILLEGAL_MOVE = "Made illegal move"
     STARTED_GAME = "Started game"
     HORIZONTAL = 1
@@ -33,7 +33,6 @@ class Move:
         # need to initiate Move, but not play when starting the game controller class 
         if action == Move.STARTED_GAME:
             return
-        print("Continuing")
         # now attempt the move 
         if player.is_human:
             self.attempt_human_move(board, bag, player, action, tiles)
@@ -400,7 +399,6 @@ class Move:
     ### HOOK SPOT GENERATION ###
     # hook spots: list of (row, col) where a new word could be placed
     def pull_all_hook_spots(self, local_board):
-        print("pull_all_hook_spots")
         valid_hook_spots = []
         for row in range(board.Board.MIN_ROW, board.Board.MAX_ROW):
             for col in range(board.Board.MIN_COL, board.Board.MAX_COL):
@@ -484,7 +482,6 @@ class Move:
                 current_location = current_location.offset(0, 1)
             else:
                 current_location = current_location.offset(1, 0)
-            print(current_location)
         #no crosswords were formed, so it is ok to place this tile here
         if len(tile_crossword) == 1:
             return 0
@@ -635,16 +632,12 @@ class Move:
     PRINT_DIVIDER = "-------------------------------"
     def print_all_hook_spots(self):
         print("HOOK SPOTS", file=sys.stderr)
-        print(self.all_hook_spots)
-        return 
         for hook_spot in self.all_hook_spots:
             print(hook_spot, file=sys.stderr)
         print(Move.PRINT_DIVIDER, file=sys.stderr)
         
     def print_all_crossword_scores(self):
         print("\nPrinting all_crossword_scores")
-        print(self.all_crossword_scores)
-        return 
         for direction in self.all_crossword_scores:
             for (x, y) in self.all_crossword_scores[direction]:
                 print(str((x, y)) + " --> " + str(self.all_crossword_scores[direction][(x, y)]))

@@ -114,7 +114,7 @@ function handleData(data) {
         //enter key or mouse click 
         if (event.which === 13 || event.type === 'click') {
             if (!$(this).hasClass("buttonClicked")) {
-                postData({"last_move": {"action": "Try Placing Tiles", "player": "Human", "detail": placedTilesHuman}}).done(handleData);
+                postData({"action": "Place tiles", "data": placedTilesHuman}).done(handleData);
                 $(this).addClass("buttonClicked");
             };
         };
@@ -127,13 +127,13 @@ function handleData(data) {
             if (!$(this).hasClass("buttonClicked")) {
                 var toExchange = $(".exchangeCell").map(function(index, elem) {
                     if ($(this).text() != "") 
-                        return  $(this).text()[0]; 
+                        return $(this).text()[0]; 
                     else 
                         return $(this).text();
                 }).filter(function(index, elem) {
                     return elem != "";
                 }).toArray();
-                postData({"last_move": {"action": "Try Exchanging Tiles", "player": "Human", "detail": toExchange}}).done(handleData);
+                postData({"action": "Exchange tiles", "data": toExchange}).done(handleData);
                 $(this).addClass("buttonClicked");
             };
         };
@@ -145,7 +145,7 @@ function handleData(data) {
         if (event.which === 13 || event.type === 'click') {
             if (!$(this).hasClass("buttonClicked")) {
                 //socket.emit('moveDoneHuman', {"last_move": {"action": "Try Passing", "player": "Human", "detail": ""}});
-                postData({"last_move": {"action": "Try Passing", "player": "Human", "detail": ""}}).done(handleData);
+                postData({"action": "Pass", "data": ""}).done(handleData);
                 $(this).addClass("buttonClicked");                    
             };            
         };
@@ -467,7 +467,7 @@ function parseWord(wordsPlayed, index) {
     if (wordsPlayed[index] == undefined) {
         return "";
     }
-    return wordsPlayed[index]["word"].join("");
+    return wordsPlayed[index]["word"];
 };
 function parseScore(wordsPlayed, index) {
     if (wordsPlayed[index] == undefined) {

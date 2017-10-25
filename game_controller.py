@@ -120,6 +120,23 @@ class GameController:
                     print("  {key_inner}: {value}".format(key_inner = key_inner, value = serialized[key][key_inner]))
         print("------------------------------\n")
     
+   # convert front end data to tile moves
+    def front_end_data_to_tiles(self, data):
+        print(data) 
+        action = data["action"]
+        tiles = []
+        if action == move.Move.PLACE_TILES:
+            for i, row in enumerate(data):
+                for j, cell in enumerate(row):
+                    if cell != "":
+                        # only need to input letter and location (and not player) for placing tiless
+                        tiles.append(tile.Tile(cell, None, location.Location(i, j)))
+        elif action == move.Move.EXCHANGE_TILES:
+            for i, letter in data:
+                # only need letter since these will be returned to the bag 
+                tiles.append(tile.Tile(letter, None, None))
+        return tiles 
+        
 if __name__ == "__main__":
     game = GameController()
     game.print_serialize()
