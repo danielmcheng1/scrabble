@@ -1,6 +1,6 @@
 
 import gaddag 
-SCRABBLE_GADDAG = gaddag.read_gaddag_full()
+#SCRABBLE_GADDAG = gaddag.read_gaddag_full()
 
 import board 
 import bag
@@ -39,12 +39,12 @@ class GameController:
         if self.last_move.succeeded():
             # implement the attempted human move 
             self.implement_last_move() 
-            
-            # now find the optimal computer move is 
-            self.last_move = move.Move(self.board, self.bag, self.computer_player)
-            
-            # and implement that computer move 
-            self.implement_last_move()
+            if 1 == 0:
+                # now find the optimal computer move is 
+                self.last_move = move.Move(self.board, self.bag, self.computer_player)
+                
+                # and implement that computer move 
+                self.implement_last_move()
         
         # pass the result back to the front end 
         return self.serialize()
@@ -151,6 +151,11 @@ if __name__ == "__main__":
     game.human_player.rack.add_tile(tile.Tile("E", game.human_player, location.Location(7, 12)))
     
     game.process_human_move(move.Move.PLACE_TILES, game.human_player.rack.tiles[-6:])
+    
+    
+    game.human_player.rack.use_one_tile_random()
+    game.human_player.rack.add_tile(tile.Tile("A", game.human_player, location.Location(6, 9)))
+    game.process_human_move(move.Move.PLACE_TILES, game.human_player.rack.tiles[-1:])
     game.print_serialize()    
     i = 1
     while not game.game_has_ended():    

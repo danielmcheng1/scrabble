@@ -31,7 +31,10 @@ class Move:
             print(tile) 
             
         print("Crossword scores")
-        print(self.all_crossword_scores)
+        self.print_all_crossword_scores()
+        print("Hook spots")
+        self.print_all_hook_spots()
+        
         
         print("Human" if player.is_human else "Computer")
         print(player.rack.serialize())
@@ -55,7 +58,13 @@ class Move:
     '''
     def attempt_human_move(self, board, bag, player, move_type, attempted_tiles):
         if move_type == Move.PLACE_TILES:
+            print("ATTEMPTED TILES")
+            for tile in attempted_tiles:
+                print(tile.serialize())
             sorted_tiles = self.sort_tiles(attempted_tiles)
+            print("SORTED TILES")
+            for tile in sorted_tiles:
+                print(tile.serialize())
             self.attempt_place_tiles(sorted_tiles, board)
         elif move_type == Move.EXCHANGE_TILES:
             self.attempt_move_exchange_tiles(attempted_tiles, bag)
@@ -72,8 +81,12 @@ class Move:
             self.log_error_human(e)
             return 
          
-        direction = self.get_direction(sorted_tiles) 
+        direction = self.get_direction(sorted_tiles, board) 
         start_location = self.find_start_of_word(sorted_tiles[0].location, direction, board)
+        print("SORTED TILES")
+        for tile in sorted_tiles:
+            print(tile.serialize())
+        print("Direction {0}, Start_location {1}".format(direction, start_location))
         num_tiles = len(sorted_tiles) 
         
         # now walk down from the start location and pull the entire sequence of tiles forming the word (= tiles on board + tiles placed by player) 
@@ -137,6 +150,10 @@ class Move:
             raise ValueError("You can only place in one row or column")    
         
     def validate_tiles_hook_onto_existing(self, tiles):
+        print("VALIDAT HOOKE______")
+        print(self.all_hook_spots)
+        for tile in tiles:
+            print(tile.serialize())
         intersection = set(self.all_hook_spots).intersection([tile.location.get_tuple() for tile in tiles])
         if len(intersection) == 0:
             raise ValueError("Your placed tiles must hook onto an existing tile on the board")
@@ -154,12 +171,13 @@ class Move:
     def sort_tiles(self, tiles):
         return sorted(tiles, key = lambda tile: (tile.location.get_row(), tile.location.get_col()))
     
-    def get_direction(self, sorted_tiles):
+    def get_direction(self, sorted_tiles, board):
         (used_rows, used_cols) = self.find_used_rows_and_cols(sorted_tiles)
         print("get_direction: used {0} rows and {1} cols".format(used_rows, used_cols))
+        # 0 length is already validated in a separate method 
         if len(used_rows) == 1:
             # exception: if only one tile is placed, check if the word formed is actually going Move.VERTICALly 
-            if len(used_cols) == 0 and self.has_tile_above_or_below(sorted_tiles[0], board):
+            if len(used_cols) == 1 and board.has_tile_above_or_below(sorted_tiles[0].location): 
                 direction = Move.VERTICAL 
             else:
                 direction = Move.HORIZONTAL 
@@ -175,11 +193,6 @@ class Move:
             rows.add(tile.location.get_row())
             cols.add(tile.location.get_col())
         return (rows, cols) 
-        
-    def has_tile_above_or_below(self, tile, board):
-        tile_row = tile.location.get_row()
-        tile_col = tile.location.get_col() 
-        return board.has_scrabble_tile(tile_row, tile_col - 1) or board.has_scrabble_tile(tile_row, tile_col + 1)
     
     # REFACTOR add direction to offset 
     # walk upwards/leftwards from the first player-placed tile, until there are no more existing board tiles 
@@ -492,7 +505,6 @@ class Move:
         # and a 1+ score if there is a valid crossword
     def pull_crossword_score_for_letter(self, board, letter, location, orig_direction):
         # if a tile already exists there, no crosswords can be placed here 
-        print("Crossword at {0}, with letter {1}".format(location, letter))
         if board.has_tile(location):
             return -1
             
@@ -506,10 +518,8 @@ class Move:
         current_location = start_location
         while True:
             if board.has_tile(current_location):
-                print("Walking at tile {0}".format(board.get_tile(current_location).serialize()))
                 tile_crossword.append(board.get_tile(current_location))
             else:
-                print("Creating new tile at {0}".format(current_location))
                 # create a tile for this temporary crossword letter since we are finding all potential crosswords  
                 if current_location == start_location:
                     tile_crossword.append(tile.Tile(letter, None, current_location))
@@ -546,7 +556,7 @@ class Move:
             
         if len(tile_word) == 0: 
             return 0 
-        direction = self.get_direction(tile_word) 
+        direction = self.get_direction(tile_word, board) 
         start_location = tile_word[0].location 
         # print"start_location is " + str(start_location))
         num_tiles_placed = 0 # if 7 tiles placed, then add bingo bonus 

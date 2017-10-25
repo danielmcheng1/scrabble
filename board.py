@@ -81,4 +81,7 @@ class Board:
         if self.get_bonus(row, col) == Board.DOUBLE_LETTER:
             return 2
         return 1
-            
+    
+    def has_tile_above_or_below(self, location):
+        return self.has_tile(location.offset(-1, 0)) or self.has_tile(location.offset(1, 0))
+        
