@@ -135,6 +135,8 @@ class GameController:
         return tiles 
         
 if __name__ == "__main__":
+    pass
+    '''
     game = GameController()
     game.print_serialize()
     
@@ -159,8 +161,7 @@ if __name__ == "__main__":
     game.process_human_move(move.Move.PLACE_TILES, game.human_player.rack.tiles[-1:])
     game.print_serialize()    
     i = 1
-    while not game.game_has_ended():    
-        break 
+    while not game.game_has_ended():   
         if i % 2:
             game.process_human_move(move.Move.PASS) 
         else:
@@ -168,3 +169,4 @@ if __name__ == "__main__":
             game.process_human_move(move.Move.EXCHANGE_TILES, game.human_player.rack.get_n_tiles(i % 6 + 1))
         game.print_serialize() 
         i += 1
+    '''

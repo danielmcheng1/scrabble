@@ -19,10 +19,8 @@ class Player:
         # architecture assumes validation happened in move class 
         num_tiles_to_draw = min(bag.num_tiles_left(), n)
         bag.shuffle_bag()
-        print("Before: {0}".format(bag.num_tiles_left()))
         for i in range(0, num_tiles_to_draw):
             self.rack.add_tile(bag.draw_tile().change_player(self))
-        print("After: {0}".format(bag.num_tiles_left()))
             
     def exchange_tiles(self, bag, tiles):
         bag.shuffle_bag() 
@@ -39,13 +37,8 @@ class Player:
     
     # use up tiles from the player's rack so that the board can play them 
     def use_tiles_for_placing(self, tiles):
-        print("Rack")
-        print(self.rack.serialize())
-        print("Input tiles for placing")
-        for tile in tiles:
-            print(tile.serialize())
-            
         self.rack.use_tiles(tiles)
+        
     def add_new_word_played(self, word, score):
         self.words_played.append({"word": word, "score": score})
         self.running_score += score 

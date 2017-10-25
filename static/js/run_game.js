@@ -1,78 +1,10 @@
 
-/*
-DATA STRUCTURES
-       Need to return:
-    Players 
-        self.name = name
-        self.is_human = is_human
-        self.rack = []  
-        self.running_score = 0
-        self.words_played = []
-    Board State
-        two-dimensional array representing board
-        for each cell in board:
-            "cell" object:
-                .tile 
-                    .letter 
-                    .points
-                    .player
-                .bonus 
-             if blank then attribute is N/A
- To Do
-   logging
-        why randomly shifts letters/wrong click and place e.g. triple word @bottom
-            more responsive if child inherits parent
-        start game over/not actually ending 
-        add delay to computer move
-        instructions while waiting
-            say comop confident enough to show tile
-        https://www.soundsnap.com/tags/scrabble Scrabble game tile down 2 and Scrabble game with hand in bag
-    Make this data structure better..
-    naming conventions
-    Move to FLASK template 
-        https://stackoverflow.com/questions/11178426/how-can-i-pass-data-from-flask-to-javascript-in-a-template
-    improve error handling 
-    TBDs in python apprentice module 
-        '''
-    scrabble move class ? 
-    #class has to also flag who just played the tile....
-    #clean up functions --should really recreate everything in the class --
-    #capitalize classes
-    #make move each time -- 
-        computer_player = scrabble_game_play.play_order[1]
-    score = self.board.make_human_move(input_row, input_col, input_dir, input_word, player.rack)
-    scrabble_board_wrapper = [[{"bonus": map_bonus_to_view(scrabble_board.board[row][col]), \
-                                "tile": map_tile_to_view(scrabble_board.board[row][col], 'Human', scrabble_score_dict)} \
-                                for col in range(MAX_COL)] \
-                                for row in range(MAX_ROW)] 
-   
-    TBD add validatoin 
-    //TBD try removing table in rack --spacing changes
-    //bonus text not centered 
-    '''
- */
-
-
-
-var sourceTile;
-var sourceCell;
-var placedTilesHuman;
     
-//kick off the music 
-//prevent these from being clicked until game has started 
-$("#playMoveHuman").addClass("buttonClicked");
-$("#exchangeTilesHuman").addClass("buttonClicked");
-$("#passHuman").addClass("buttonClicked");
- 
-function postData(data) {
-    return $.ajax({
-        type: 'POST',
-        url: $SCRIPT_ROOT + '/processMove', //window.location.href,
-        data: JSON.stringify(data),
-        dataType: 'json',
-        contentType: 'application/json; charset=utf-8'
-    });
-};
+/*
+ajax posts:
+#1: load a new game (or restart a game)
+#2: send the latest move to the back end
+*/
 function loadNewGame() {
     return $.ajax({
         type: 'POST',
@@ -82,19 +14,35 @@ function loadNewGame() {
         contentType: 'application/json; charset=utf-8'
     });        
 };
-$("#restartGame").click (function(event) {
-    if (!$(this).hasClass("buttonClicked")) {
-        $(this).addClass("buttonClicked");
-        loadNewGame().done(handleData); 
-    };
-});
+function postData(data) {
+    return $.ajax({
+        type: 'POST',
+        url: $SCRIPT_ROOT + '/processMove', //window.location.href,
+        data: JSON.stringify(data),
+        dataType: 'json',
+        contentType: 'application/json; charset=utf-8'
+    });
+};
 
+
+// initialize these as clicked so user cannot send moves until the document has fully loaded 
+$("#playMoveHuman").addClass("buttonClicked");
+$("#exchangeTilesHuman").addClass("buttonClicked");
+$("#passHuman").addClass("buttonClicked");
+$("#restartGame").addClass("buttonClicked");
+ 
+// global variables for storing tiles clicked by user
+var sourceTile;
+var sourceCell;
+var placedTilesHuman;
+
+// send load request to back end once the document has fully loaded
 $(document).ready(function() {
     playBackgroundMusic();
     loadNewGame().done(handleData); 
 });
-    
-    
+
+// handle the response from the back end server 
 function handleData(data) {
     refreshBoard(data);
     refreshPlacedTilesHuman(data);
@@ -105,10 +53,16 @@ function handleData(data) {
     
     var soundEffectsDOM = document.getElementById("soundEffects"); //for tile placement, bag shuffling, etc.
     
-    //once data has refreshed, allow player to restart game
+    // once data has refreshed, allow player to restart game
     $("#restartGame").removeClass("buttonClicked");
+    $("#restartGame").click (function(event) {
+        if (!$(this).hasClass("buttonClicked")) {
+            $(this).addClass("buttonClicked");
+            loadNewGame().done(handleData); 
+        };
+    });
     
-    //once data has refreshed, allow player to send move 
+    // once data has refreshed, allow player to send move 
     $("#playMoveHuman").removeClass("buttonClicked");
     $("#playMoveHuman").on('keypress click', function(event) {
         //enter key or mouse click 
