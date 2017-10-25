@@ -19,9 +19,6 @@ class Board:
         
     ### UPDATE BOARD ### 
     def play_tiles(self, tiles):
-        print("Playing these tiles:")
-        for tile in tiles:
-            print(tile.serialize())
         for tile in tiles:
             self.tiles_placed[tile.location.get_row()][tile.location.get_col()] = tile 
         self.num_words_placed += 1
