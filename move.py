@@ -26,7 +26,9 @@ class Move:
         # save hook spots and crossword spots -- used to determine validity throughout 
         self.all_hook_spots = self.pull_all_hook_spots(board)
         self.all_crossword_scores = self.pull_all_crossword_scores(board, player.rack)
-        
+        print("Human" if player.is_human() else "Computer")
+        print(player.rack.serialize()
+         
         # logs (1) if the human's attempted move was valid, and (2) the optimal move calculated by the computer 
         # game controller class uses this to update the board/racks and return to the front end 
         self.result = {"player": player, "action": action, "success": False, "detail": {}, "error": ""}
@@ -190,7 +192,7 @@ class Move:
         bag_grammar = "tile" if num_tiles_in_bag == 1 else "tiles" 
         
         if num_tiles_exchange == 0:
-            self.log_error_human("Must exchange at least one tile. Perhaps you meant to pass insstead?")
+            self.log_error_human("Must exchange at least one tile. Perhaps you meant to pass instead?")
             return 
             
         if num_tiles_exchange > num_tiles_in_bag:

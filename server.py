@@ -29,12 +29,12 @@ def process_move():
     print('---------------- Logged in as: ' + flask_login.current_user.id)
     session_id = flask_login.current_user.id
     
-    user_data = flask.request.json if flask.request.json is not None else {}
-    print('-----------------Received json:\n {0}'.format(user_data), file=sys.stderr)
+    user_json = flask.request.json if flask.request.json is not None else {}
+    print('-----------------Received json:\n {0}'.format(user_json), file=sys.stderr)
     
     
     game = ALL_SESSIONS[session_id]
-    game.process_human_move(user_data["action"], game.front_end_data_to_tiles(user_data))
+    game.process_human_move(user_json["action"], game.front_end_json_to_tiles(user_json))
     
     print('--------------- SENDING JSON BACK')
     game.print_serialize()
