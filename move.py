@@ -1,11 +1,13 @@
 
+import sys 
+
 import tile  
 import location    
 import board 
 import rack 
 import gaddag 
 import game_controller 
-from game_controller import SCRABBLE_GADDAG
+
 # REFACTOR tiles are not deep copied 
 # REFACTOR errors? at least not value error....
 class Move: 
@@ -223,12 +225,12 @@ class Move:
         # First find all Move.HORIZONTAL words 
         path_on_board = Move.Path(self, board, hook_location, hook_location, Move.HORIZONTAL, Move.PREFIX_OFFSET)
         tile_builder = Move.TileBuilder(rack, [], [])
-        self.build_words(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
+        self.build_words(game_controller.SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
         
         # Then find all Move.VERTICAL words 
         path_on_board = Move.Path(self, board, hook_location, hook_location, Move.VERTICAL, Move.PREFIX_OFFSET)
         tile_builder = Move.TileBuilder(rack, [], [])
-        self.build_words(SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
+        self.build_words(game_controller.SCRABBLE_GADDAG.start_node, path_on_board, tile_builder)
         
    
     # Recursively build up words by walking down the gaddag and board
@@ -623,6 +625,12 @@ class Move:
     
     # printing functions for debugging 
     PRINT_DIVIDER = "-------------------------------"
+    def print_all_hook_spots(self):
+        print("HOOK SPOTS", file=sys.stderr)
+        for hook_spot in self.all_hook_spots:
+            print(hook_spot, file=sys.stderr)
+        print(Move.PRINT_DIVIDER, file=sys.stderr)
+        
     def print_all_crossword_scores(self):
         # print"\nPrinting all_crossword_scores")
         for direction in self.all_crossword_scores:

@@ -40,6 +40,8 @@ class GameController:
             # implement the attempted human move 
             self.implement_last_move() 
             
+            # REFACTOR -- delete 
+            self.last_move.print_all_hook_spots()
             # now find the optimal computer move is 
             self.last_move = move.Move(self.board, self.bag, self.computer_player)
             

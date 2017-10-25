@@ -18,7 +18,6 @@ def load_new_game():
     print('Logged in as: ' + flask_login.current_user.id)
     session_id = flask_login.current_user.id
     game = game_controller.GameController()
-    game.print_serialize()
     
     ALL_SESSIONS[session_id] = game
     return flask.jsonify(game.serialize())
@@ -26,15 +25,17 @@ def load_new_game():
 
 @app.route('/processMove',methods=['POST'])
 def process_move():
-    print('Logged in as: ' + flask_login.current_user.id)
+    print('---------------- Logged in as: ' + flask_login.current_user.id)
     session_id = flask_login.current_user.id
     
     user_data = flask.request.json if flask.request.json is not None else {}
-    print('Received json {0}'.format(user_data), file=sys.stderr)
+    print('-----------------Received json:\n {0}'.format(user_data), file=sys.stderr)
     
     game = ALL_SESSIONS[session_id]
     game.process_human_move("Pass turn")
     
+    print('--------------- SENDING JSON')
+    game.print_serialize()
     return flask.jsonify(game.serialize())
     # session_data = SCRABBLE_APPRENTICE_DATA.setdefault(session_id, {})
 @app.route('/moveDoneHuman2',methods=['POST'])    

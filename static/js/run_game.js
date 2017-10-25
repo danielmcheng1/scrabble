@@ -67,7 +67,7 @@ $("#passHuman").addClass("buttonClicked");
 function postData(data) {
     return $.ajax({
         type: 'POST',
-        url: $SCRIPT_ROOT + '/moveDoneHuman', //window.location.href,
+        url: $SCRIPT_ROOT + '/processMove', //window.location.href,
         data: JSON.stringify(data),
         dataType: 'json',
         contentType: 'application/json; charset=utf-8'
@@ -335,10 +335,10 @@ function refreshBoard(data) {
             var table_cell = '';
             var tile_obj = tiles[i][j];
             if (tile_obj != '') {
-                var player_type = tile_obj["player_type"];
+                var player = tile_obj["player"];
                 var letter = tile_obj["letter"];
                 var points = tile_obj["points"];
-                tile_span = '<span class="tile tileFixed tileUnselected tile' + player_type + '">' + letter + '<sub class="tilePoints">' + points + '</sub></span>'; 
+                tile_span = '<span class="tile tileFixed tileUnselected tile' + player + '">' + letter + '<sub class="tilePoints">' + points + '</sub></span>'; 
                 table_cell = '<td class="boardCell noBonusFill" id=boardCell_' + i + '_' + j + '>' + tile_span;         
             } 
             else {
