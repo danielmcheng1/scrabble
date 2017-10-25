@@ -321,16 +321,16 @@ class Move:
                 # if we were to continue offsetting in the current direction
                 if self.board.has_tile(self.curr_location.offset(0, self.offset)):
                     return False 
-                # check the other end (could happen if the prefix is the entire word 
-                if self.board.has_tile(self.curr_location.offset(0, -1 * self.offset * tile_builder.num_tiles_used())):
+                # check the other end (could happen if the prefix is the entire word). plus one because one more tile will be placed to complete the word
+                if self.board.has_tile(self.curr_location.offset(0, -1 * self.offset * (tile_builder.num_tiles_used() + 1))):
                     return False
                 return True 
             else: 
                 # if we were to continue offsetting in the current direction
                 if self.board.has_tile(self.curr_location.offset(self.offset, 0)):
                     return False 
-                # check the other end (could happen if the prefix is the entire word 
-                if self.board.has_tile(self.curr_location.offset(-1 * self.offset * tile_builder.num_tiles_used(), 0)):
+                # check the other end (could happen if the prefix is the entire word. plus one because one more tile will be placed to complete the word 
+                if self.board.has_tile(self.curr_location.offset(-1 * self.offset * (tile_builder.num_tiles_used() + 1), 0)):
                     return False
                 return True 
         
