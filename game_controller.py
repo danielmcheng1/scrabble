@@ -126,8 +126,7 @@ class GameController:
             for i, row in enumerate(user_json["data"]):
                 for j, cell in enumerate(row):
                     if cell != "":
-                        # only need to input letter and location (and not player) for placing tiless
-                        tiles.append(tile.Tile(cell, None, location.Location(i, j)))
+                        tiles.append(tile.Tile(cell, self.human_player, location.Location(i, j)))
         elif action == move.Move.EXCHANGE_TILES:
             for i, letter in enumerate(user_json["data"]):
                 # only need letter since these will be returned to the bag 
@@ -155,6 +154,7 @@ if __name__ == "__main__":
     game.print_serialize()    
     i = 1
     while not game.game_has_ended():    
+        break 
         if i % 2:
             game.process_human_move(move.Move.PASS) 
         else:

@@ -6,7 +6,8 @@ class Bag:
         self.bag = []
         tile_freq_dict = self.load_tile_freq_dict()
         for letter in tile_freq_dict.keys():
-            self.bag = self.bag + [tile.Tile(letter)] * tile_freq_dict[letter]
+            for i in range(0, tile_freq_dict[letter]):
+                self.bag = self.bag + [tile.Tile(letter)]
         self.shuffle_bag()
         
     def shuffle_bag(self):

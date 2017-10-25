@@ -26,6 +26,10 @@ class Move:
         # save hook spots and crossword spots -- used to determine validity throughout 
         self.all_hook_spots = self.pull_all_hook_spots(board)
         self.all_crossword_scores = self.pull_all_crossword_scores(board, player.rack)
+        print("Board tiles")
+        for tile in board.serialize_tiles_placed():
+            print(tile) 
+            
         print("Crossword scores")
         print(self.all_crossword_scores)
         
@@ -391,7 +395,7 @@ class Move:
             return "rack : {0}, tile_word: {1}, tiles_used: {2}".format(self.rack.serialize(), self.concatenate_tiles(self.tile_word), self.concatenate_tiles(self.tiles_used))
         
         def num_tiles_used(self):
-            return len(tiles_used) 
+            return len(self.tiles_used) 
             
         def concatenate_tiles(self, tiles):
             return "".join([tile.letter for tile in tiles])
@@ -482,6 +486,7 @@ class Move:
         # and a 1+ score if there is a valid crossword
     def pull_crossword_score_for_letter(self, board, letter, location, orig_direction):
         # if a tile already exists there, no crosswords can be placed here 
+        print("Crossword at {0}, with letter {1}".format(location, letter))
         if board.has_tile(location):
             return -1
             
@@ -495,9 +500,11 @@ class Move:
         current_location = start_location
         while True:
             if board.has_tile(current_location):
+                print("Walking at tile {0}".format(board.get_tile(current_location).serialize()))
                 tile_crossword.append(board.get_tile(current_location))
             else:
-                # create a tile for this temporary crossword letter since we finding all potential crosswords  
+                print("Creating new tile at {0}".format(current_location))
+                # create a tile for this temporary crossword letter since we are finding all potential crosswords  
                 if current_location == start_location:
                     tile_crossword.append(tile.Tile(letter, None, current_location))
                 # no more board tiles means we've hit the end of the crossword 
