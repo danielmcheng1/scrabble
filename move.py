@@ -26,8 +26,8 @@ class Move:
         # save hook spots and crossword spots -- used to determine validity throughout 
         self.all_hook_spots = self.pull_all_hook_spots(board)
         self.all_crossword_scores = self.pull_all_crossword_scores(board, player.rack)
-        print("Human" if player.is_human() else "Computer")
-        print(player.rack.serialize()
+        print("Human" if player.is_human else "Computer")
+        print(player.rack.serialize())
          
         # logs (1) if the human's attempted move was valid, and (2) the optimal move calculated by the computer 
         # game controller class uses this to update the board/racks and return to the front end 
@@ -178,9 +178,9 @@ class Move:
         start_location = location_of_first_placed_tile 
         while board.has_tile(start_location):
             if direction == Move.HORIZONTAL:
-                start_location = start_location.offset(-1, 0)
-            else:
                 start_location = start_location.offset(0, -1)
+            else:
+                start_location = start_location.offset(-1, 0)
         return start_location
     
     
