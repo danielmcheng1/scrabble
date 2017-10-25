@@ -27,7 +27,7 @@ class GameController:
         self.computer_player.draw_tiles_at_start_of_game(self.bag)
         
         # initiate last move to computer passing the previous round 
-        self.last_move = move.Move(self.board, self.bag, self.computer_player, move.Move.PASS)
+        self.last_move = move.Move(self.board, self.bag, self.computer_player, move.Move.STARTED_GAME)
         
     def process_human_move(self, action, tiles = None):
         # do not process further if the game has already ended 

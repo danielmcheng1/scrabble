@@ -18,7 +18,7 @@ def load_new_game():
     print('Logged in as: ' + flask_login.current_user.id)
     session_id = flask_login.current_user.id
     game = game_controller.GameController()
-    
+    print('Returning')
     ALL_SESSIONS[session_id] = game
     return flask.jsonify(game.serialize())
 

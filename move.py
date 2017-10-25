@@ -15,6 +15,7 @@ class Move:
     EXCHANGE_TILES = "Exchange tiles"
     PASS = "Pass turn"
     MADE_ILLEGAL_MOVE = "Made illegal move"
+    STARTED_GAME = "Started game"
     HORIZONTAL = 1
     VERTICAL = -1
     PREFIX_OFFSET = -1
@@ -29,7 +30,10 @@ class Move:
         # logs (1) if the human's attempted move was valid, and (2) the optimal move calculated by the computer 
         # game controller class uses this to update the board/racks and return to the front end 
         self.result = {"player": player, "action": action, "success": False, "detail": {}, "error": ""}
-        
+        # need to initiate Move, but not play when starting the game controller class 
+        if action == Move.STARTED_GAME:
+            return
+        print("Continuing")
         # now attempt the move 
         if player.is_human:
             self.attempt_human_move(board, bag, player, action, tiles)
@@ -396,8 +400,7 @@ class Move:
     ### HOOK SPOT GENERATION ###
     # hook spots: list of (row, col) where a new word could be placed
     def pull_all_hook_spots(self, local_board):
-        print("NUM WORDS PLACED")
-        print(local_board.num_words_placed)
+        print("pull_all_hook_spots")
         valid_hook_spots = []
         for row in range(board.Board.MIN_ROW, board.Board.MAX_ROW):
             for col in range(board.Board.MIN_COL, board.Board.MAX_COL):
@@ -429,6 +432,8 @@ class Move:
             # keys = valid letter for that location 
             # values = score for that crossword  
     def pull_all_crossword_scores(self, local_board, rack):
+        print("pull_all_crossword_scores")
+        
         crossword_scores_for_move_horizontal = {}
         crossword_scores_for_move_vertical = {}
         for row in range(board.Board.MIN_ROW, board.Board.MAX_ROW):
@@ -464,22 +469,22 @@ class Move:
             
         # generate the crossword 
         tile_crossword = []
-        current_location = start_location 
+        current_location = start_location
         while True:
-            if board.has_tile(location):
-                tile_crossword.append(board.get_tile(location))
+            if board.has_tile(current_location):
+                tile_crossword.append(board.get_tile(current_location))
             else:
                 # create a tile for this temporary crossword letter since we finding all potential crosswords  
                 if current_location == start_location:
-                    tile_crossword.append(tile.Tile(letter, None, location))
+                    tile_crossword.append(tile.Tile(letter, None, current_location))
                 # no more board tiles means we've hit the end of the crossword 
                 else:
                     break 
             if crossword_direction == Move.HORIZONTAL:
-                location = location.offset(0, 1)
+                current_location = current_location.offset(0, 1)
             else:
-                location = location.offset(1, 0)
-                
+                current_location = current_location.offset(1, 0)
+            print(current_location)
         #no crosswords were formed, so it is ok to place this tile here
         if len(tile_crossword) == 1:
             return 0
@@ -492,12 +497,14 @@ class Move:
             return -1
         
         # calculate the score 
-        return self.calc_word_score(tile_crossword, board) 
+        return self.calc_word_score(tile_crossword, board, False) 
         
         
     ### SCORE CALCULATION ###
     # calculate Scrabble score for a word (represented as a list of TILE objects)
-    def calc_word_score(self, tile_word, board):
+    # include_crosswords flag because we only compute crossword scores for actual placement -- 
+        # when using this method for caching all possible crossword scores, we do not want to calculate crossword scores for those cached crosswords
+    def calc_word_score(self, tile_word, board, include_crosswords = True):
         # print"Entering calc_word_score")
         for tile in tile_word:
             pass # printtile.serialize())
@@ -532,7 +539,7 @@ class Move:
             
             # add in scores from crossword (multipliers already included in these) 
             letter = tile_word[i].letter
-            if letter in self.all_crossword_scores[direction][(row, col)].keys():
+            if include_crosswords and letter in self.all_crossword_scores[direction][(row, col)].keys():
                 crossword_scores += self.all_crossword_scores[direction][(row, col)][letter]
         
         #final word multiplier bonus
