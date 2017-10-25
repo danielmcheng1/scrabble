@@ -151,7 +151,7 @@ class Move:
         (used_rows, used_cols) = self.find_used_rows_and_cols(sorted_tiles)
         if len(used_rows) == 1:
             # exception: if only one tile is placed, check if the word formed is actually going Move.VERTICALly 
-            if len(sorted_tiles) == 0 and self.has_tile_above_or_below(sorted_tiles[0], board):
+            if len(used_cols) == 0 and self.has_tile_above_or_below(sorted_tiles[0], board):
                 direction = Move.VERTICAL 
             else:
                 direction = Move.HORIZONTAL 
