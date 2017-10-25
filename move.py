@@ -461,9 +461,6 @@ class Move:
         crossword_direction = orig_direction * -1
         start_location = self.find_start_of_word(location, crossword_direction, board)
         
-        #no crosswords were formed, so it is ok to place this tile here
-        if start_location == location:
-            return 0
             
         # generate the crossword 
         tile_crossword = []
@@ -483,6 +480,9 @@ class Move:
             else:
                 location = location.offset(1, 0)
                 
+        #no crosswords were formed, so it is ok to place this tile here
+        if len(tile_crossword) == 1:
+            return 0
         # check if we formed a valid word 
         try:
             self.validate_tile_word_in_dictionary(tile_crossword)              
