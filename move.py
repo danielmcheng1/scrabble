@@ -181,16 +181,22 @@ class Move:
         tile_col = tile.location.get_col() 
         return board.has_scrabble_tile(tile_row, tile_col - 1) or board.has_scrabble_tile(tile_row, tile_col + 1)
     
+    # REFACTOR add direction to offset 
     # walk upwards/leftwards from the first player-placed tile, until there are no more existing board tiles 
     # this must then be the start of the actual word 
     def find_start_of_word(self, location_of_first_placed_tile, direction, board):
-        start_location = location_of_first_placed_tile 
-        while board.has_tile(start_location):
+        curr_location = location_of_first_placed_tile
+        if direction  == Move.HORIZONTAL:
+            next_location = curr_location.offset(0, -1)
+        else:
+            next_location = curr_location.offset(-1, 0)
+        while board.has_tile(next_location):
+            curr_location = location.Location(next_location.get_row(), next_location.get_col())
             if direction == Move.HORIZONTAL:
-                start_location = start_location.offset(0, -1)
+                next_location  = next_location.offset(0, -1)
             else:
-                start_location = start_location.offset(-1, 0)
-        return start_location
+                next_location  = next_location.offset(-1, 0)
+        return curr_location
     
     
     ### HUMAN EXCHANGING TILES ###
