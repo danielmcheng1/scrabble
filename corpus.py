@@ -1,6 +1,7 @@
 import os 
 import csv 
 
+#REFACTOR check if memory loaded multiple times  
 # source lexicon: http://www.wordgamedictionary.com/twl06/download/twl06.txt = the FreeScrabbleDictionary_twl06.txt, used in North American tournaments
 def load_corpus():
     corpus = []

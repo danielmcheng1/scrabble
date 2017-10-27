@@ -1,5 +1,6 @@
 
 import gaddag 
+#global data structures so that this only loads once to server all requests 
 SCRABBLE_GADDAG = gaddag.read_gaddag_full()
 
 import board 
@@ -9,9 +10,6 @@ import player
 import move 
 import tile 
 import location 
-
-#global data structures so that this only loads once to server all requests 
-#REFACTOR check if memory loaded multiple times  
 
 class GameController:
     MAX_CONSECUTIVE_TURNS_PASSED = 6

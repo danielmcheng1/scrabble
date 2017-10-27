@@ -245,6 +245,7 @@ class Move:
             return 
             
         curr_location = path.curr_location
+        
         # first check if we've completed a word 
         for letter in node.eow_set:
             if path.has_board_tile():
